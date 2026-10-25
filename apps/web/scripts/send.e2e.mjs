@@ -26,7 +26,7 @@ async function note(page, who, what) {
 }
 try {
   // ---- the link ----
-  await p.goto(`${W}/`, { waitUntil: 'networkidle' });
+  await p.goto(`${W}/stage`, { waitUntil: 'networkidle' });
   check('a note to Kemi', (await note(p, 'Kemi', 'said you were outside when you hadn’t even left the house')) === 'note');
   const k = (await notebookOf(p)).notes[0];
   await steps(p).getByRole('button', { name: /Send it to Kemi/ }).click();
@@ -65,7 +65,7 @@ try {
   check('sent, the note says so, and its step sends it again', await steps(p).getByText('Sent. Kemi hasn’t opened it yet.').isVisible() && await steps(p).getByRole('button', { name: /Send it to Kemi again/ }).isVisible());
 
   // ---- Kemi's phone: a notebook of her own already on it ----
-  await q.goto(`${W}/`, { waitUntil: 'networkidle' }); await q.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
+  await q.goto(`${W}/stage`, { waitUntil: 'networkidle' }); await q.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
   const hers = await q.evaluate(() => JSON.parse(localStorage.getItem('pa.notebook')).id);
   await q.goto(`${W}/answer/${ask}`, { waitUntil: 'networkidle' });
   await q.getByRole('button', { name: 'Open it' }).waitFor({ timeout: 15000 });
@@ -77,7 +77,7 @@ try {
   check('the writer sees it’s been opened', await p.getByText(/^Seen \d{1,2}:\d{2}[ap]m\.$/).first().waitFor({ timeout: 8000 }).then(() => true, () => false));
   await q.getByRole('button', { name: 'Open it' }).click();
   await q.locator('canvas[data-paper][data-drawn]').waitFor({ timeout: 12000 });
-  check('opened: the note comes down, with Peruzzi’s question on it', await q.getByText(k.line).count() === 1 && await q.getByText('Peruzzi asks: Could this be love?').count() === 1);
+  check('opened: the note comes down, with Peruzzi’s question on it, and his answer', await q.getByText(k.line).count() === 1 && await q.getByText('Peruzzi asks: Could this be love?').count() === 1 && await q.getByText(`Peruzzi answers: ${k.verdict}.`).count() === 1);
   check('…and nothing to tick', await q.getByRole('checkbox').count() === 0 && await q.getByText(/tick/i).count() === 0 && await q.getByText(/^(Yes|No)$/).count() === 0);
   const next = q.getByRole('region', { name: 'Next steps' }); await next.waitFor({ timeout: 8000 });
   check('then her next steps: write Adé back, post it, the song', await next.getByText('Your turn: tell Adé what they did.').isVisible() && await next.getByRole('button', { name: /Write Adé back/ }).isVisible()
@@ -101,7 +101,7 @@ try {
   check('the writer’s notes catch up by themselves: Kemi is writing back', await p.getByText('Kemi is writing you back.').first().waitFor({ timeout: 25000 }).then(() => true, () => false));
 
   // ---- by email: the writer proves their address first ----
-  await p.goto(`${W}/`, { waitUntil: 'networkidle' });
+  await p.goto(`${W}/stage`, { waitUntil: 'networkidle' });
   check('a note to Bayo', (await note(p, 'Bayo', 'texted good morning at 4pm and called it consistency')) === 'note');
   const k2 = (await notebookOf(p)).notes.find((x) => x.dear === 'Bayo');
   await steps(p).getByRole('button', { name: /Send it to Bayo/ }).click();
@@ -120,9 +120,9 @@ try {
   await s2.getByText(/^Delivered\./).waitFor({ timeout: 8000 });
   const mail = (await outbox()).find((m) => m.to === rec);
   check('the note goes out from the named writer', !!mail && mail.subject === 'Adé asked Peruzzi to ask you something' && /Adé \(a\*+@example\.com\) asked us to deliver this note/.test(mail.text), mail?.subject);
-  check('…with the note on it: what they did, Peruzzi’s question and the song, and nothing to tick', !!mail && mail.text.includes('Dear Bayo,') && mail.text.includes(k2.line) && mail.text.includes('Peruzzi asks: Could this be love?')
-    && mail.text.includes('Inferno by Peruzzi') && !mail.text.includes('[ ]') && !/tick/i.test(mail.text) && mail.text.includes('write Adé one back if you like'));
-  check('…the way to open it, to write back, the song, and the opt-out', !!mail && /Open the note: \S+\/a\/\w+/.test(mail.text) && /Write Adé a note back: \S+\/\?back=\w+/.test(mail.text)
+  check('…with the note on it: what they did, Peruzzi’s question and his answer, the song, and nothing to tick', !!mail && mail.text.includes('Dear Bayo,') && mail.text.includes(k2.line) && mail.text.includes('Peruzzi asks: Could this be love?')
+    && mail.text.includes(`Peruzzi answers: ${k2.verdict}.`) && mail.text.includes('Inferno by Peruzzi') && !mail.text.includes('[ ]') && !/tick/i.test(mail.text) && mail.text.includes('write Adé one back if you like'));
+  check('…the way to open it, to write back, the song, and the opt-out', !!mail && /Open the note: \S+\/a\/\w+/.test(mail.text) && /Write Adé a note back: \S+\/stage\?back=\w+/.test(mail.text)
     && /Listen to Inferno by Peruzzi: https?:\/\//.test(mail.text) && /Never send me notes again: \S+\/api\/u\/block\//.test(mail.text));
   check('…in flat colour: the rose, on light paper, no gradients', !!mail && mail.html.includes('#c86272') && mail.html.includes('#f5e6e9') && !mail.html.includes('gradient'));
   check('…and nothing of their address in it', !!mail && !mail.text.includes(rec) && !mail.html.includes(rec));

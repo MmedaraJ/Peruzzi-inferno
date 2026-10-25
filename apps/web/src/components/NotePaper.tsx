@@ -10,7 +10,7 @@ const BLEED = 16;
 export function NotePaper({ note, heading: Heading = 'h2' }: { note: NoteData; heading?: 'h1' | 'h2' }) {
   const box = useRef<HTMLDivElement>(null), sheet = useRef<HTMLCanvasElement>(null);
   const [laid, setLaid] = useState<NoteLayout | null>(null);
-  const key = JSON.stringify([note.noteNo, note.title, note.dear, note.line, note.nameplate, note.song, note.artist]);
+  const key = JSON.stringify([note.noteNo, note.title, note.dear, note.line, note.verdict, note.nameplate, note.song, note.artist]);
   useEffect(() => {
     let live = true, drawnAt = 0;
     // drawn again whenever its width changes (a phone turned on its side)
@@ -34,6 +34,7 @@ export function NotePaper({ note, heading: Heading = 'h2' }: { note: NoteData; h
         <Heading>Dear {note.dear},</Heading>
         <p>{note.line}</p>
         <p>{note.nameplate || 'Peruzzi'} asks: Could this be love?</p>
+        {note.verdict && <p>{note.nameplate || 'Peruzzi'} answers: {note.verdict}.</p>}
         <p>{note.song || 'Inferno'} by {note.artist || 'Peruzzi'}</p>
       </div>
     </div>

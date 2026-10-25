@@ -15,7 +15,7 @@ const ViewportDebug = lazy(() => import('./components/ViewportDebug').then((m) =
 // ?debug=vp: the screen's measures on screen, for the rest of the visit
 const debugVp = (() => { try { if (new URLSearchParams(location.search).get('debug') === 'vp') sessionStorage.setItem('pa.debug', 'vp'); return sessionStorage.getItem('pa.debug') === 'vp'; } catch { return false; } })();
 
-/** There's no front page: the site opens on a note. */
+/** The site opens on the way in: the cover, the song, and the stage. */
 export default function App() {
   useHistoryNotes(); useScrollMemory();
   return (
@@ -23,6 +23,7 @@ export default function App() {
       {debugVp && <Suspense fallback={null}><ViewportDebug /></Suspense>}
       <Routes>
         <Route path="/" element={<Asked />} />
+        <Route path="/stage" element={<Asked />} />
         <Route path="/notes" element={<Asked />} />
         <Route path="/notes/:id" element={<Asked />} />
         <Route path="/tracklist" element={<Asked />} />

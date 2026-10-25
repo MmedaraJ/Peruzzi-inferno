@@ -24,7 +24,7 @@ const NOTES: [string, string][] = [
     const r = await read({ who, what, humour: 'cheeky', artist: 'Peruzzi', song: 'Inferno' });
     if (!r) { console.log(`\nDear ${who}, you ${what}\n  (no reading)`); continue; }
     const v = r.reading; times.push(r.ms);
-    console.log(`\nDear ${who}, you ${what}  [${r.ms}ms, ${r.usage.in}+${r.usage.cacheRead}c+${r.usage.cacheWrite}w in, ${r.usage.out} out]\n  ${v.kind.toUpperCase()}${v.thing ? ' · a thing' : ''} · Dear ${v.dear} · ${v.title}\n  ${v.line}  (${v.line.split(/\s+/).length} words)\n  Peruzzi asks: Could this be love?`);
+    console.log(`\nDear ${who}, you ${what}  [${r.ms}ms, ${r.usage.in}+${r.usage.cacheRead}c+${r.usage.cacheWrite}w in, ${r.usage.out} out]\n  ${v.kind.toUpperCase()}${v.thing ? ' · a thing' : ''} · Dear ${v.dear} · ${v.title}\n  ${v.line}  (${v.line.split(/\s+/).length} words)\n  Peruzzi asks: Could this be love?  ${v.verdict ? `${v.verdict}.` : '(no answer)'}`);
   }
   times.sort((a, b) => a - b);
   console.log(`\nmedian ${times[Math.floor(times.length / 2)]}ms, slowest ${times[times.length - 1]}ms`);

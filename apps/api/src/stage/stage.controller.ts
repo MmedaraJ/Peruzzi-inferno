@@ -70,7 +70,7 @@ export class StageController {
   /** a note's reading, for the phone that wrote it (its notebook's token) or the one it was sent to (the ask's code) */
   @Get('voice/note/:id')
   async spoken(@Param('id') id: string, @Query('t') t: string | undefined, @Query('a') a: string | undefined, @Res() res: Response) {
-    const k = await this.prisma.note.findUnique({ where: { id }, select: { status: true, dear: true, line: true, fallback: true, notebook: { select: { token: true } }, asks: a ? { where: { code: String(a).slice(0, 16) }, select: { id: true } } : false } });
+    const k = await this.prisma.note.findUnique({ where: { id }, select: { status: true, dear: true, line: true, verdict: true, fallback: true, notebook: { select: { token: true } }, asks: a ? { where: { code: String(a).slice(0, 16) }, select: { id: true } } : false } });
     const allowed = !!k && k.status === 'asked' && ((!!t && k.notebook.token === t) || (!!a && (k as any).asks?.length > 0));
     if (!allowed) { res.status(404).end(); return; }
     return this.sendAudio(res, await this.voice.say(noteReading(k!)), 3600);

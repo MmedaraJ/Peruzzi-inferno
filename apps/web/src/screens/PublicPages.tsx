@@ -44,7 +44,7 @@ export function PublicNotePage() {
       {/* the pages people open from a shared link animate in CSS, so they don't wait for framer-motion; the paper is the
           story card's own, drawn on the page */}
       <div className="rise mt-5" style={{ '--rise-delay': '0s' } as CSSProperties}>
-        <NotePaper note={{ noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line, nameplate, song: site?.song, artist: site?.artist }} heading="h1" />
+        <NotePaper note={{ noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line, verdict: n.verdict, nameplate, song: site?.song, artist: site?.artist }} heading="h1" />
       </div>
       <p className="mt-4 text-center text-[13.5px] leading-snug text-bone/55">{n.title}<br />{fmt(n.date)}{n.city ? ` · ${n.city}` : ''}</p>
       <div className="mt-6 flex flex-col gap-2.5">

@@ -1,8 +1,9 @@
 /** The pictures people post: one note, or a tracklist. Drawn on a canvas, flat and matte: the dark of the stage, the
- *  note on light blush paper, Peruzzi's question in a box of rose, as a story (1080×1920) or a square (1080×1080). */
+ *  note on light blush paper, Peruzzi's question in a box of rose and his answer under it, as a story (1080×1920) or a
+ *  square (1080×1080). */
 export type CardSize = 'story' | 'square';
-/** What a note says: who it's to, and what they did (as Peruzzi told it). */
-export interface NoteData { noteNo: string; title: string; dear: string; line: string; nameplate?: string; song?: string; artist?: string }
+/** What a note says: who it's to, what they did (as Peruzzi told it), and Peruzzi's answer to his question. */
+export interface NoteData { noteNo: string; title: string; dear: string; line: string; verdict?: string | null; nameplate?: string; song?: string; artist?: string }
 export interface NoteCardData extends NoteData { site: string }
 export interface TracklistCardData { name: string; meta: string; notes: { noteNo: string; title: string; dear: string }[]; site: string; song?: string; artist?: string; nameplate?: string }
 
@@ -137,19 +138,22 @@ function notePaper(d: NoteData, story: boolean, img: HTMLImageElement | null) {
     return { lines: [d.line], px: story ? 34 : 22 };
   };
   const pad = story ? 36 : 24, labelH = story ? 28 : 18;
-  let li = theLine(1), boxH = 0, need = 0, qPx = 0;
+  // Peruzzi's answer, under his question: its label, and the answer in the note's ink
+  const verdict = d.verdict?.trim() ? `${d.verdict.trim()}.` : '';
+  const vGap = story ? 46 : 26, vLabelGap = story ? 14 : 8;
+  let li = theLine(1), boxH = 0, need = 0, qPx = 0, vPx = 0;
   const lineGap = story ? 50 : 30, boxGap = story ? 60 : 34;
   for (let k = 1; k >= 0.6; k -= 0.05) {
-    li = theLine(k); qPx = Math.round((story ? 72 : 46) * k);
+    li = theLine(k); qPx = Math.round((story ? 72 : 46) * k); vPx = Math.round((story ? 68 : 44) * k);
     boxH = pad + labelH + (story ? 16 : 10) + qPx * 1.1 + pad * 0.85;
-    need = lineGap + li.lines.length * li.px * 1.2 + boxGap + boxH;
+    need = lineGap + li.lines.length * li.px * 1.2 + boxGap + boxH + (verdict ? vGap + labelH + vLabelGap + vPx * 1.05 : 0);
     if (need <= room) break;
   }
   const ph = nameDY + need + creditGap + foot;
   // where things sit, from the paper's top: the line, and Peruzzi's question
   const lineTop = nameDY + lineGap;
   const boxTop = lineTop + li.lines.length * li.px * 1.2 + boxGap;
-  const asks = `${(d.nameplate || 'Peruzzi').toUpperCase()} ASKS`;
+  const asks = `${(d.nameplate || 'Peruzzi').toUpperCase()} ASKS`, answers = `${(d.nameplate || 'Peruzzi').toUpperCase()} ANSWERS`;
   /** The paper with its top left at (px, py). */
   const draw = (x: CanvasRenderingContext2D, px: number, py: number) => {
     const L = px + inset, R = px + pw - inset, mid = px + pw / 2, bottom = py + ph;
@@ -175,6 +179,13 @@ function notePaper(d: NoteData, story: boolean, img: HTMLImageElement | null) {
     x.fillStyle = ROSE; rounded(x, L, y, TW, boxH, story ? 18 : 12); x.fill();
     x.fillStyle = BLUSH; x.font = `400 ${story ? 27 : 18}px ${CAPS}`; spaced(x, asks, mid, y + pad + labelH * 0.8, story ? 6 : 4);
     x.fillStyle = '#ffffff'; x.font = `400 ${qPx}px ${DISPLAY}`; x.textAlign = 'center'; x.fillText('Could this be love?', mid, y + pad + labelH + (story ? 16 : 10) + qPx * 0.86);
+    // and his answer
+    if (verdict) {
+      y += boxH + vGap;
+      x.fillStyle = ROSE; x.font = `400 ${story ? 27 : 18}px ${CAPS}`; spaced(x, answers, mid, y + labelH * 0.8, story ? 6 : 4);
+      const vp = fit(x, verdict, (p) => `400 ${p}px ${DISPLAY}`, vPx, Math.round(vPx * 0.6), TW);
+      x.fillStyle = PAPER_INK; x.font = `400 ${vp}px ${DISPLAY}`; x.textAlign = 'center'; x.fillText(verdict, mid, y + labelH + vLabelGap + vPx * 0.86);
+    }
     // the song, in the corner
     x.fillStyle = MUTED; x.font = `400 ${story ? 20 : 15}px ${CAPS}`; (x as any).letterSpacing = `${story ? 5 : 4}px`; x.textAlign = 'right';
     x.fillText(songCredit(d.song, d.artist), R, bottom - foot); (x as any).letterSpacing = '0px';

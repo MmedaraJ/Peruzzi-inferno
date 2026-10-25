@@ -77,9 +77,13 @@ function hazeTile() {
  *  lands on a beat, every beat is the brightest moment, each bar's first brighter still, and the moves and colours
  *  change on a bar's first beat, with each part of the song. For the break before the drop, the beams close in on
  *  Peruzzi and go dark but for a flash on each beat; the drop hits hardest. Between songs they drift at half the tempo,
- *  dimmer; with reduced motion, or `still`, they hold one look. The look's colour is set on `room` as `--rim` and
- *  `--led`, for the crowd's outlines and the stage's LED strip; `kick` makes them all jump (the crash, a tap on the mic). */
-export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLElement>; kick: RefObject<{ at: number; s: number }>; still?: boolean }) {
+ *  dimmer (with `show`, they put on the show anyway, at the song's tempo); with reduced motion, or `still`, they hold
+ *  one look. The look's colour is set on `room` as `--rim` and `--led`, for the crowd's outlines and the stage's LED
+ *  strip; `kick` makes them all jump (the crash, a tap on the mic). Off the stage, `floor` can leave out the floor
+ *  lights, and `spot` move the warm spot (and where the beams meet on Peruzzi) to where he is, as fractions. */
+export function LightRig({ room, kick, still = false, show = false, floor: floorLights = true, spot = [0.5, 0.4] }: {
+  room: RefObject<HTMLElement>; kick: RefObject<{ at: number; s: number }>; still?: boolean; show?: boolean; floor?: boolean; spot?: readonly [number, number];
+}) {
   const rigRef = useRef<HTMLCanvasElement>(null), lightRef = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
     const rig = rigRef.current, light = lightRef.current, box = room.current;
@@ -117,18 +121,19 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
 
     const draw = (now: number) => {
       if (!w || !h) return;
-      const s = w / 400;
+      const s = Math.min(w, 520) / 400;   // the fixtures' size: a phone's, up to the stage's widest, however wide the room
       const { beats, live } = beatAt(now);
-      const go = live && moving;
-      // the time, in beats: the song's while it plays; a slower clock between songs; one moment held when still
-      const b = !moving ? 2 : live ? beats : beats * 0.5;
+      const go = live && moving;   // the song itself: its sections, its break
+      const on = moving && (live || show);   // the show, to the song or (with `show`) to its tempo alone
+      // the time, in beats: the song's while it plays; a slower clock between songs (unless `show`); one moment held when still
+      const b = !moving ? 2 : live || show ? beats : beats * 0.5;
       const n = Math.floor(b), f = b - n;   // the beat just gone, and how far on from it
       const part = partAt(b, go);
       const lookN = moving ? mod(part.index * 3 + Math.floor((b - part.start) / 8), LOOKS.length) : 0; const look = LOOKS[lookN];
       if (lookN !== lookAt) { lookAt = lookN; const c = `rgb(${look[0].join(' ')})`; box.style.setProperty('--rim', c); box.style.setProperty('--led', c); }
       const dark = go && inBreak(b);                              // the break before the drop
-      const pulse = go ? Math.exp(-f * 5) : 0;                    // each beat
-      const downbeat = go && mod(n, 4) === 0 ? Math.exp(-f * 3) : 0;   // each bar's first
+      const pulse = on ? Math.exp(-f * 5) : 0;                    // each beat
+      const downbeat = on && mod(n, 4) === 0 ? Math.exp(-f * 3) : 0;   // each bar's first
       // a hit of white where each section starts, the drop hardest
       const hit = go && SECTIONS.includes(part.start) && b - part.start < 1 ? Math.exp(-(b - part.start) * 12) * (part.start === BREAK[1] ? 1.7 : 1) : 0;
       const kk = kick.current; const boost = moving && kk?.at ? kk.s * Math.exp(-(now - kk.at) / 260) : 0;
@@ -137,7 +142,7 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
       const y0 = Math.max(3, h * 0.03), th = Math.max(5, 7 * s), hw = Math.max(7, 9 * s), hh = Math.max(8, 11 * s);
       const pivot = y0 + th + hh * 0.5 + 3 * s;
       const aim = (x: number) => (0.5 - x) * 36;
-      const mid = (x: number) => (Math.atan2((0.5 - x) * w, h * 0.42 - pivot) * 180) / Math.PI - aim(x);
+      const mid = (x: number) => (Math.atan2((spot[0] - x) * w, h * (spot[1] + 0.02) - pivot) * 180) / Math.PI - aim(x);
       const moveOn = (k: number) => (moving ? MOVES[mod(partAt(k, go).index, MOVES.length)] : MOVES[1]);
       const target = (k: number, i: number, x: number) => (go && inBreak(k) ? mid(x) : moveOn(k).at(k, i, x, mid(x)));
       // and on its way to the next beat's place: a swing or a snap, as the next beat's move goes (into the break, and
@@ -149,7 +154,7 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
         const pan = (aim(x) + from + (to - from) * t) * (Math.PI / 180);
         const level = moveOn(n).lit?.(n, i) ?? 1;
         const I = !moving ? 0.75
-          : !go ? level * 0.5 + 0.5 * boost
+          : !on ? level * 0.5 + 0.5 * boost
           : dark ? 0.1 + 0.7 * Math.exp(-f * 8)
           : Math.min(1.25, level * (0.5 + 0.45 * pulse + 0.2 * downbeat) + 0.5 * boost);
         const dx = Math.sin(pan), dy = Math.cos(pan);
@@ -185,12 +190,12 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
       // the floor lights, in every other part and for the drop: leaning across each other a beat at a time, every other
       // one bright in turn
       const floorY = h * 0.765;
-      const floorOn = !moving ? 0.8 : dark ? 0 : mod(part.index, 2) || (go && part.start === BREAK[1]) ? 1 : 0;
+      const floorOn = !floorLights ? 0 : !moving ? 0.8 : dark ? 0 : mod(part.index, 2) || (go && part.start === BREAK[1]) ? 1 : 0;
       const sway = (k: number, j: number) => (moving ? ((k + j) % 2 ? 12 : -12) : 0);
       const tf = moving ? 0.5 - 0.5 * Math.cos(Math.PI * f) : 0;
       const floor = FLOOR.map((x, j) => {
         const lean = ((x - 0.5) * 30 + sway(n, j) + (sway(n + 1, j) - sway(n, j)) * tf) * (Math.PI / 180);
-        const I = floorOn * (go ? (mod(n + j, 2) ? 0.85 : 0.35) * (0.45 + 0.55 * pulse) : 0.4) + 0.3 * boost;
+        const I = floorOn * (on ? (mod(n + j, 2) ? 0.85 : 0.35) * (0.45 + 0.55 * pulse) : 0.4) + (floorLights ? 0.3 * boost : 0);
         return { x: x * w, dx: Math.sin(lean), dy: -Math.cos(lean), I };
       });
       for (const fl of floor) if (fl.I > 0.01) beam(fl.x, floorY, fl.dx, fl.dy, h * 0.95, 1.8 * s, look[2], fl.I * 0.7);
@@ -203,7 +208,7 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
       for (const hd of heads) flare(hd.ox, hd.oy, 9 * s, hd.c, Math.min(1, hd.I));
       for (const fl of floor) if (fl.I > 0.01) flare(fl.x, floorY, 6 * s, look[2], Math.min(1, fl.I));
       // the warm spot on Peruzzi, alone in the break
-      glow(w * 0.5, h * 0.4, w * 0.3, L.warm, dark ? 0.12 + 0.12 * pulse : 0.07 + 0.04 * pulse, 1.25);
+      glow(w * spot[0], h * spot[1], w * 0.3, L.warm, dark ? 0.12 + 0.12 * pulse : 0.07 + 0.04 * pulse, 1.25);
       // a hit of white
       const white = 0.2 * hit + 0.16 * boost;
       if (white > 0.005) { l.fillStyle = `rgba(255,238,226,${Math.min(0.5, white).toFixed(3)})`; l.fillRect(0, 0, w, h); }
@@ -222,7 +227,7 @@ export function LightRig({ room, kick, still = false }: { room: RefObject<HTMLEl
     seen.observe(box);
     fit();
     return () => { cancelAnimationFrame(raf); size.disconnect(); seen.disconnect(); };
-  }, [room, kick, still]);
+  }, [room, kick, still, show, floorLights, spot[0], spot[1]]);
   return (
     <>
       <canvas ref={rigRef} aria-hidden className="pointer-events-none absolute inset-x-0 top-0 w-full" style={{ height: `${RIG * 100}%` }} />

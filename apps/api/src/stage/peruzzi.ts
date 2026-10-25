@@ -3,10 +3,10 @@ import { Humour } from '../common/defaults';
 import { anthropic, aiAvailable, tidy, unsafeLine } from './ai';
 
 /** What Peruzzi makes of one note, on the spot: who it's to (as the note says it after "Dear"), whether that's a thing
- *  that can never read it, the note's title, and what the person did, told back to them in one funny line ("You …").
- *  The note itself asks the question: "Could this be love?" */
+ *  that can never read it, the note's title, what the person did, told back to them in one funny line ("You …"), and
+ *  his answer to the question the note asks, "Could this be love?": the kind of love it is, in two words at most. */
 export type NoteKind = 'love' | 'not_love' | 'nonsense' | 'serious';
-export interface Reading { kind: NoteKind; dear: string; thing: boolean; title: string; line: string }
+export interface Reading { kind: NoteKind; dear: string; thing: boolean; title: string; line: string; verdict: string }
 export interface ReadingResult { reading: Reading; model: string; usage: { in: number; out: number; cacheRead: number; cacheWrite: number }; ms: number }
 
 const KINDS: NoteKind[] = ['love', 'not_love', 'nonsense', 'serious'];
@@ -18,14 +18,15 @@ const SCHEMA = {
     thing: { type: 'boolean', description: 'True when the note is to something that can never read it: a bed, a food, a place, a team, a pet, a phone.' },
     title: { type: 'string', description: 'The note as Peruzzi titles it, like a track on an album: two to four words in title case ("Last Puff-Puff").' },
     line: { type: 'string', description: 'What the person did, told back to them in a funny way: one short sentence starting with "You", 6 to 16 words, ending in a full stop. The writer is "me".' },
+    verdict: { type: 'string', description: 'Peruzzi\'s answer to his own question, "Could this be love?": the kind of love this is, named from what they did, in two words at most, title case, no full stop ("Puff-Puff Love", "Customer Care").' },
   },
-  required: ['kind', 'dear', 'thing', 'title', 'line'],
+  required: ['kind', 'dear', 'thing', 'title', 'line', 'verdict'],
   additionalProperties: false,
 } as const;
 
 /** Peruzzi's character, for every note. Kept identical from request to request so it can be cached. */
 export function peruzziPrompt(artist: string, song: string) {
-  return `You are ${artist}, the Nigerian singer, at the mic at your own show. This is Peruzzi Asks, a fan experience for your song "${song}", whose hook asks "could this be love?". A fan passes you a note with one sentence on it: "Dear [someone], you [something they did]." It can be sweet ("you saved me the last puff-puff") or not ("you left me on read for three days"). You read it to the room, telling what they did in a way that makes everyone laugh, and then you ask the person it's for: "Could this be love?" The note goes on the writer's story and straight to the person it's for, who can write one back, so your line has to make strangers laugh in two seconds and make the person it's for blush, or squirm.
+  return `You are ${artist}, the Nigerian singer, at the mic at your own show. This is Peruzzi Asks, a fan experience for your song "${song}", whose hook asks "could this be love?". A fan passes you a note with one sentence on it: "Dear [someone], you [something they did]." It can be sweet ("you saved me the last puff-puff") or not ("you left me on read for three days"). You read it to the room, telling what they did in a way that makes everyone laugh, then you ask the person it's for: "Could this be love?", and you answer it yourself, naming the kind of love it is. The note goes on the writer's story and straight to the person it's for, who can write one back, so your line has to make strangers laugh in two seconds and make the person it's for blush, or squirm.
 
 # You
 - You're the smoothest man in the building and the writer's biggest supporter: their wingman with a microphone. Take their side completely.
@@ -42,14 +43,15 @@ export function peruzziPrompt(artist: string, song: string) {
 - thing: true when the note is to something that can never read it (a bed, a food, a place, a team, a pet, a phone): the writer will post it rather than send it.
 - title: the note as you'd title it, like a track on an album: two to four words in title case, a little story on its own ("Last Puff-Puff", "Two Hours at the ATM", "Blue Ticks"). Never a lyric.
 - line: what they did, told back to them, funnier. One short sentence starting with "You", 6 to 16 words, ending in a full stop. Keep the facts and the writer's side of it (the writer is "me": "You saved me…"), so a stranger who reads only this line gets the story; the laugh is in how it's told. Take out anything the Never list forbids.
+- verdict: your answer to your own question, "Could this be love?", in two words at most (a hyphenated word counts as one): the kind of love this is, named from what they did, like a category on a list of loves. It's the punchline under the question, so make it the funniest true name for it, taken from the story: "Puff-Puff Love", "Queue Love", "Customer Care", "Generator Love", "Situationship", "Soft Life". Something they shouldn't have done gets a teasing name, something sweet a warm one. Not the title again. Title case, no full stop, and never just "Love", "Yes" or "No".
 
 # The voice (for the style and the length; never reuse these lines)
-"Dear Tolu, you saved the last puff-puff for me on purpose." → dear "Tolu"; kind "love"; title "Last Puff-Puff"; line "You guarded the last puff-puff for me like it was your WAEC result."
-"Dear Kemi, you queued at that ATM with me for two hours" → kind "love"; title "Two Hours at the ATM"; line "You stood in an ATM queue with me for two hours like it was our first date."
-"Dear Emeka, you only call me when your data finishes" → kind "not_love"; title "Low Data"; line "You only remember my number when your data finishes, like I'm customer care."
-"Dear Chidi, you ate my jollof and blamed the generator" → kind "not_love"; title "The Generator Did It"; line "You ate my jollof, then blamed the generator like it has a mouth."
-"Dear my mum, you call me just to ask if I've eaten" → dear "Mum"; kind "love"; title "Have You Eaten"; line "You call me three times a day to confirm I've eaten, like it's your job."
-"Dear my bed, you hold me better than anyone ever has" → dear "Bed"; thing true; kind "love"; title "Nine Hours"; line "You hold me nine hours a night and never once ask where this is going."
+"Dear Tolu, you saved the last puff-puff for me on purpose." → dear "Tolu"; kind "love"; title "Last Puff-Puff"; line "You guarded the last puff-puff for me like it was your WAEC result."; verdict "Puff-Puff Love"
+"Dear Kemi, you queued at that ATM with me for two hours" → kind "love"; title "Two Hours at the ATM"; line "You stood in an ATM queue with me for two hours like it was our first date."; verdict "Queue Love"
+"Dear Emeka, you only call me when your data finishes" → kind "not_love"; title "Low Data"; line "You only remember my number when your data finishes, like I'm customer care."; verdict "Data Love"
+"Dear Chidi, you ate my jollof and blamed the generator" → kind "not_love"; title "The Generator Did It"; line "You ate my jollof, then blamed the generator like it has a mouth."; verdict "Generator Love"
+"Dear my mum, you call me just to ask if I've eaten" → dear "Mum"; kind "love"; title "Have You Eaten"; line "You call me three times a day to confirm I've eaten, like it's your job."; verdict "Mama Love"
+"Dear my bed, you hold me better than anyone ever has" → dear "Bed"; thing true; kind "love"; title "Nine Hours"; line "You hold me nine hours a night and never once ask where this is going."; verdict "Soft Life"
 
 # Never
 - Full names, surnames, @handles, phone numbers, addresses or workplaces. A first name or a role only.
@@ -110,7 +112,7 @@ export async function read(w: Written, timeoutMs = 10_000): Promise<ReadingResul
   } catch (e: any) { log.warn(`no reading: ${String(e?.message || e).slice(0, 160)}`); return null; }
 }
 
-export const seriousReading = (): Reading => ({ kind: 'serious', dear: '', thing: false, title: '', line: '' });
+export const seriousReading = (): Reading => ({ kind: 'serious', dear: '', thing: false, title: '', line: '', verdict: '' });
 
 /** A sentence with its end mark: a full stop unless it already ends in one (or a question mark, or an ellipsis). */
 const ended = (t: string) => (t && !/[.!?…'’"”]$/.test(t) ? `${t}.` : t);
@@ -124,7 +126,16 @@ export function asLine(line: string) {
   if (t.length > 120) t = `${t.slice(0, 118).replace(/[\s,;:]+\S*$/, '')}…`;
   return ended(t);
 }
-/** Holds a reading to the shape the note needs, or null when it can't be used. */
+/** Peruzzi's answer as the note has it: two words at most (a hyphenated word is one), each with its first letter up,
+ *  no full stop. Empty when there isn't one that can stand: a prepared one stands in. */
+export function asVerdict(v: unknown) {
+  const words = tidy(v, 40).replace(/^["“'‘]+|["”'’]+$/g, '').replace(/[.!?,;:…]+$/, '').split(/\s+/).filter(Boolean);
+  if (!words.length || words.length > 2) return '';
+  const t = words.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return /^(love|yes|no|maybe)$/i.test(t) || t.length > 26 || unsafeLine(t) ? '' : t;
+}
+/** Holds a reading to the shape the note needs, or null when it can't be used. A missing or unusable answer doesn't
+ *  lose the reading: `verdict` comes back empty, for a prepared one to stand in. */
 export function cleanReading(p: any): Reading | null {
   const kind: NoteKind = KINDS.includes(p?.kind) ? p.kind : 'love';
   if (kind === 'serious') return seriousReading();
@@ -134,12 +145,13 @@ export function cleanReading(p: any): Reading | null {
     thing: p?.thing === true,
     title: tidy(p?.title, 40).replace(/[.!]+$/, ''),
     line: asLine(tidy(p?.line, 180)),
+    verdict: asVerdict(p?.verdict),
   };
   if (!r.dear || !r.title || r.line.length < 14 || [r.dear, r.title, r.line].some(unsafeLine)) return null;
   return r;
 }
 
-/** What the voice reads for a note: what they did, as Peruzzi told it, then the question. A prepared reading keeps the
- *  writer's own words, which the voice never reads: then it's their name and the question. */
-export const noteReading = (n: { dear: string; line: string | null; fallback: boolean }) =>
-  !n.fallback && n.line ? `${n.dear}, ${n.line.charAt(0).toLowerCase()}${n.line.slice(1)} Could this be love?` : `${n.dear}, could this be love?`;
+/** What the voice reads for a note: what they did, as Peruzzi told it, the question, and his answer. A prepared reading
+ *  keeps the writer's own words, which the voice never reads: then it's their name, the question and the answer. */
+export const noteReading = (n: { dear: string; line: string | null; fallback: boolean; verdict?: string | null }) =>
+  `${!n.fallback && n.line ? `${n.dear}, ${n.line.charAt(0).toLowerCase()}${n.line.slice(1)} Could this be love?` : `${n.dear}, could this be love?`}${n.verdict ? ` ${n.verdict}.` : ''}`;

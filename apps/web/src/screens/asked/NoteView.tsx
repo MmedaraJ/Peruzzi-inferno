@@ -7,8 +7,8 @@ import { NotePaper } from '../../components/NotePaper';
 import { NoteData } from '../../lib/cards';
 
 /** What the paper needs from a note, and from the stage: Peruzzi's name, and the song for its corner. */
-export const paperOf = (n: { noteNo: string; title: string; dear: string; line: string | null }, cfg?: { nameplate?: string; song?: string; artist?: string } | null): NoteData => ({
-  noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line || '', nameplate: cfg?.nameplate, song: cfg?.song, artist: cfg?.artist,
+export const paperOf = (n: { noteNo: string; title: string; dear: string; line: string | null; verdict?: string | null }, cfg?: { nameplate?: string; song?: string; artist?: string } | null): NoteData => ({
+  noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line || '', verdict: n.verdict, nameplate: cfg?.nameplate, song: cfg?.song, artist: cfg?.artist,
 });
 
 /** How far a note has got, in a few words: "Seen 2:14am." */

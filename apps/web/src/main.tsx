@@ -10,6 +10,6 @@ import App from './App';
 import { askEarly } from './lib/early';
 
 // opened on one of the stage's addresses: ask the server what the stage needs while its code downloads
-if (/^\/(notes(\/|$)|tracklist$|answer\/|$)/.test(location.pathname)) askEarly();
+if (/^\/(stage$|notes(\/|$)|tracklist$|answer\/|$)/.test(location.pathname)) askEarly();
 
 createRoot(document.getElementById('root')!).render(<StrictMode><BrowserRouter><App /></BrowserRouter></StrictMode>);

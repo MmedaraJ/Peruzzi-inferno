@@ -14,7 +14,7 @@ export function Insights({ token }: { token: string }) {
   if (!r) return <p className="text-bone/60">Loading…</p>;
   const t = r.totals; const top = r.funnel[0]?.people || 0;
   const kpis: [string, number, string?][] = [
-    ['People', t.visitors], ['Notes written', t.notes], ['Notes Peruzzi asked', t.asked], ['Tracklists', t.tracklists],
+    ['People', t.visitors], ['Came in the way in', t.landed, `${n(t.landedIn)} went on to the stage`], ['Notes written', t.notes], ['Notes Peruzzi asked', t.asked], ['Tracklists', t.tracklists],
     ['Notes sent by link', t.asksLinks], ['Notes emailed', t.asksEmail], ['Opened by the one asked', t.seen],
     ['Written back', t.backs],
     ['Emails collected', t.contacts, `${n(t.marketing)} said yes to news`], ['Went to stream', t.streamClicks],
@@ -37,6 +37,7 @@ export function Insights({ token }: { token: string }) {
         <Section title="What the notes were about" note="As Peruzzi read them">
           {r.kinds.length ? r.kinds.map((v: any) => <Bar key={v.kind} label={KINDS[v.kind] || v.kind} value={v.n} max={r.kinds[0].n} />) : <Empty />}
         </Section>
+        <Section title="The kinds of love" note="Peruzzi’s answers, the most named first">{r.loves?.length ? r.loves.map((c: any) => <Bar key={c.label} label={c.label} value={c.n} max={r.loves[0].n} />) : <Empty />}</Section>
         <Section title="Who the notes are for">{r.dears.length ? r.dears.map((c: any) => <Bar key={c.label} label={c.label} value={c.n} max={r.dears[0].n} />) : <Empty />}</Section>
         <Section title="Notes per day"><Days rows={r.perDay} /></Section>
         <Section title="Busiest hours" note="Lagos time"><Hours hours={r.perHour} /></Section>

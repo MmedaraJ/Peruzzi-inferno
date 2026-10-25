@@ -51,12 +51,16 @@ export class InsightsService {
       cost += aiCost(u.model, { in: s.tokensIn, out: s.tokensOut, cacheRead: s.cacheRead, cacheWrite: s.cacheWrite });
       tokensIn += (s.tokensIn ?? 0) + (s.cacheRead ?? 0) + (s.cacheWrite ?? 0); tokensOut += s.tokensOut ?? 0; thinkMs += s.ms ?? 0; withUsage += u._count._all;
     }
+    // the kinds of love Peruzzi named, most named first
+    const loves = await this.prisma.note.groupBy({ by: ['verdict'], where: { createdAt: at, status: 'asked', verdict: { not: null } }, _count: { _all: true }, orderBy: { _count: { verdict: 'desc' } }, take: 10 });
+    // through the way in: who saw it, and who went on from it into the stage
+    const [landed, landedIn] = await Promise.all([people(['landing_view']), people(['landing_stage'])]);
     const sum = (rows: { _count: { _all: number } }[]) => rows.reduce((a, r) => a + r._count._all, 0);
     const hours = Array.from({ length: 24 }, (_, h) => Number(perHour.find((r) => r.h === h)?.n ?? 0));
     return {
       since, counting: from,
       totals: {
-        visitors, notes, asked: sum(kinds), tracklists,
+        visitors, landed, landedIn, notes, asked: sum(kinds), tracklists,
         asksEmail: asksByChannel.filter((r) => r.channel === 'email' && r.status === 'sent').reduce((a, r) => a + r._count._all, 0),
         asksLinks: asksByChannel.filter((r) => r.channel === 'link').reduce((a, r) => a + r._count._all, 0),
         seen, backs, contacts, marketing, streamClicks, serious, fallbacks,
@@ -67,6 +71,7 @@ export class InsightsService {
       ],
       kinds: kinds.map((v) => ({ kind: v.kind, n: v._count._all })).sort((a, b) => b.n - a.n),
       dears: dears.map((c) => ({ label: c.dear, n: c._count._all })),
+      loves: loves.map((v) => ({ label: v.verdict, n: v._count._all })),
       cities: cities.map((c) => ({ label: c.city, n: c._count._all })),
       perDay: perDay.map((r) => ({ day: r.day, n: Number(r.n) })),
       perHour: hours,

@@ -57,7 +57,7 @@ function NoteDetail({ k, onHide }: { k: any; onHide: (hidden: boolean) => void }
           <div className="border border-bone/15 p-3 text-[14.5px]">
             <p className="caps text-[10px] text-petal">{KINDS[k.kind] || k.kind}</p>
             <p className="mt-1">{k.line}</p>
-            <p className="mt-1">Peruzzi asks: Could this be love?</p>
+            <p className="mt-1">Peruzzi asks: Could this be love?{k.verdict ? <> <span className="text-petal">{k.verdict}.</span></> : null}</p>
             {k.seenAt && <p className="mt-1 text-petal">Opened {new Date(k.seenAt).toLocaleString('en-GB')}</p>}
           </div>
         ) : <p className="text-[14.5px] text-bone/70">Peruzzi put the mic down and showed where to get help.</p>}

@@ -1,8 +1,9 @@
-// The stage on a phone, the writer's side: no front page (the site opens on a note), the song from the moment it
-// opens (or, on a phone that wants a tap first, a pill asking for one, back whenever the song stops), the rig's lights,
+// The stage on a phone, the writer's side: the way in (the cover under the lights, the song, and Peruzzi Asks, whose
+// tap starts the song), the song playing as the stage opens (or, opened straight, a pill asking for a tap on a phone
+// that wants one, back whenever the song stops), the rig's lights,
 // the note in one sentence ("Dear ___, you ___.", what they did kept short by its count, the suggestions always
 // something they shouldn't have done, and nothing to tick), Peruzzi reading it while the lights come up on the band
-// and the crowd, the note with what they did as Peruzzi tells it and his question (no stamp), and its card; your notes
+// and the crowd, the note with what they did as Peruzzi tells it, his question and his answer (no stamp), and its card; your notes
 // (the note on them at once, opening its page), the back buttons and the phone's own back, the tracklist and its
 // email, the public page behind the shared link, a note to something that can't read it, and a note that describes
 // real harm. What was typed never shows on a public page as typed.
@@ -16,10 +17,17 @@ await ctx.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: new 
 const errors = []; p.on('pageerror', (e) => errors.push(e.message));
 try {
   await p.goto(`${W}/`, { waitUntil: 'networkidle' });
+  const way = p.getByRole('button', { name: /who’s on your mind/i }); await way.waitFor({ timeout: 60000 });
+  const listen = p.getByRole('link', { name: /Listen to Inferno/ });
+  check('the site opens on the way in: the cover under the lights, the song, and Peruzzi Asks', await p.locator('img[src*="cover-1200"]').count() === 1 && await p.locator('canvas[data-lights]').count() === 1 && await listen.isVisible() && await way.isVisible());
+  check('…the song’s card is the streaming link', (await listen.getAttribute('href')) === (await (await fetch(`${A}/api/site`)).json()).smartLink);
+  check('…and the song waits for the tap into the stage', !(await p.evaluate(() => window.__sound?.musicPlaying)) && !(await p.getByRole('button', { name: 'Tap to play the music' }).isVisible()));
+  await p.waitForTimeout(800); await p.screenshot({ path: `${SHOTS}/landing.png` });
+  await way.click();
   const who = p.getByLabel('Who it’s for'); const what = p.getByLabel('What they did'); await who.waitFor({ timeout: 60000 });
-  check('the site opens straight on a note: no front page, no lobby, no walkthrough', new URL(p.url()).pathname === '/' && await p.getByRole('heading', { name: 'who’s on your mind?' }).isVisible() && (await p.getByRole('dialog').count()) === 0);
+  check('the tap opens the stage, on a note: no lobby, no walkthrough', new URL(p.url()).pathname === '/stage' && await p.getByRole('heading', { name: 'who’s on your mind?' }).isVisible() && (await p.getByRole('dialog').count()) === 0);
   check('the stage: Peruzzi under the light, with his nameplate', await p.locator('img[src*="stage-"]').count() === 1 && await p.getByText(/^Peruzzi · live$/i).first().isVisible());
-  check('the song starts as the stage opens, with no tap, where the browser allows it', await p.waitForFunction(() => window.__sound?.musicPlaying, null, { timeout: 8000 }).then(() => true, () => false)
+  check('the song is playing as the stage opens, started by that tap', await p.waitForFunction(() => window.__sound?.musicPlaying, null, { timeout: 8000 }).then(() => true, () => false)
     && !(await p.getByRole('button', { name: 'Tap to play the music' }).isVisible()));
   const lights = () => p.evaluate(() => { const c = document.querySelector('canvas[data-lights]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0, sum = 0; for (let i = 0; i < d.length; i += 4) { const v = ((d[i] + d[i + 1] + d[i + 2]) * d[i + 3]) / 255; sum += v; if (v > 240) lit++; } return { lit, sum: Math.round(sum), of: d.length / 4 }; });
   const l1 = await lights(); await p.waitForTimeout(700); const l2 = await lights();
@@ -110,6 +118,8 @@ try {
   check('the note is addressed to them, as its headline', await noteBox.getByRole('heading', { name: 'Dear Tolu,' }).count() === 1);
   check('…what they did is on it as Peruzzi tells it, to them (“You …”), and no stamp', await noteBox.getByText(/^You .{8,}/).count() === 1 && await noteBox.locator('[data-stamp]').count() === 0);
   check('…Peruzzi asks the question, with nothing to tick', await noteBox.getByText('Peruzzi asks: Could this be love?', { exact: true }).count() === 1 && await noteBox.getByText(/^(Yes|No)$/).count() === 0 && await noteBox.getByRole('checkbox').count() === 0);
+  const answer = (await noteBox.getByText(/^Peruzzi answers: .+\.$/).allInnerTexts())[0] || '';
+  check('…and Peruzzi answers it himself: the kind of love it is, in two words at most', /^Peruzzi answers: \S+( \S+)?\.$/.test(answer) && !/^Peruzzi answers: (Love|Yes|No)\.$/.test(answer), answer);
   check('…and the song is in its corner', await noteBox.getByText('Inferno by Peruzzi', { exact: true }).count() === 1);
   const top = await noteBox.evaluate((el) => el.scrollTop); const paperAt = await noteBox.locator('canvas[data-paper]').boundingBox().catch(() => null);
   check('the note lands at the top, its paper starting in view', top === 0 && !!paperAt && paperAt.y >= 0 && paperAt.y < p.viewportSize().height * 0.6, JSON.stringify({ top, paper: paperAt && Math.round(paperAt.y) }));
@@ -137,11 +147,14 @@ try {
   check('the square card is up for link previews', og.status === 200 && og.headers.get('content-type') === 'image/jpeg');
   const html = await (await fetch(`${A}/q/${k.code}`)).text();
   check('the shared link previews with the note and its card', /og:title" content="Someone asked Peruzzi to ask Tolu: could this be love\?/.test(html) && html.includes(`/api/cards/n/${k.code}.jpg`));
+  const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  check('…with Peruzzi’s answer in its words', !!k.verdict && html.includes(`could this be love? ${esc(k.verdict)}.`));
   check('…and sends whoever taps it on to the note on the address they came in on (never a fixed one)', html.includes(`content="0;url=/question/${k.code}"`) && html.includes(`location.replace("/question/${k.code}")`));
   const pub = await ctx.newPage(); await pub.goto(`${W}/question/${k.code}`, { waitUntil: 'networkidle' }); await pub.locator('canvas[data-paper][data-drawn]').waitFor({ timeout: 10000 });
   const pubText = await pub.locator('body').innerText();
   check('the public note shows Peruzzi’s words and the tidied line, never the number typed', !pubText.includes('0803') && !pubText.includes('Call me on'));
   check('…and the way to write your own, and the song', await pub.getByRole('link', { name: /Write a note/ }).isVisible() && await pub.getByRole('link', { name: /Listen to Inferno/ }).isVisible());
+  check('…with Peruzzi’s answer on it', await pub.getByText(`Peruzzi answers: ${k.verdict}.`).count() === 1);
   check('…with the note’s question on the paper alone, and nothing to tick', await pub.getByRole('heading', { name: /could this be love/i }).count() === 0 && await pub.getByRole('checkbox').count() === 0 && await pub.getByText(/^(Yes|No)$/).count() === 0);
   await pub.screenshot({ path: `${SHOTS}/stage-public-note.png` }); await pub.close();
 
@@ -155,7 +168,7 @@ try {
   await p.reload({ waitUntil: 'networkidle' });
   check('the note’s page survives a reload', await p.getByRole('button', { name: /Put it on your story/ }).waitFor({ timeout: 8000 }).then(() => true, () => false));
   await p.getByRole('button', { name: 'Back to your notes' }).click(); await p.waitForURL('**/notes');
-  await p.getByRole('button', { name: 'Back to the stage' }).click(); await p.waitForURL((u) => new URL(u).pathname === '/');
+  await p.getByRole('button', { name: 'Back to the stage' }).click(); await p.waitForURL((u) => new URL(u).pathname === '/stage');
   check('back from your notes is a new note', await p.getByLabel('Who it’s for').waitFor({ timeout: 30000 }).then(() => true, () => false) && (await p.getByLabel('Who it’s for').inputValue()) === '');
   await p.screenshot({ path: `${SHOTS}/stage-again.png` });
 
@@ -177,7 +190,7 @@ try {
   await p.screenshot({ path: `${SHOTS}/stage-tracklist.png` });
 
   // a note to something that can't read it: nobody to send it to, so posting comes first
-  await p.goto(`${W}/`, { waitUntil: 'networkidle' });
+  await p.goto(`${W}/stage`, { waitUntil: 'networkidle' });
   await write(p, 'my bed', 'hold me better than anyone ever has');
   check('a note to a thing is read like any other', (await read(p)) === 'note');
   await p.getByRole('button', { name: 'Write another note' }).waitFor({ timeout: 30000 }); await p.waitForTimeout(1200);
@@ -193,13 +206,17 @@ try {
   check('…and it isn’t kept among your notes', after.notes.filter((n) => n.kind).length === 2);
   check('no errors on the page', errors.length === 0, errors.join(' | ').slice(0, 300));
 
-  // a phone that wants a tap before it plays anything: the pill asks for one, and comes back whenever the song stops
+  // a phone that wants a tap before it plays anything: the way in's tap starts the song; opened straight on the stage,
+  // the pill asks for one, and comes back whenever the song stops
   const ph = await launch({ autoplay: false }); const t = await (await ph.newContext({ ...devices['Pixel 7'] })).newPage();
   try {
-    await t.goto(`${W}/`, { waitUntil: 'networkidle' }); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
     const tapPill = t.getByRole('button', { name: 'Tap to play the music' });
     const playing = () => t.evaluate(() => window.__sound.musicPlaying);
-    check('on a phone that wants a tap first, a pill asks for it the moment the stage opens', await tapPill.waitFor({ timeout: 6000 }).then(() => true, () => false) && !(await playing()));
+    await t.goto(`${W}/`, { waitUntil: 'networkidle' });
+    await t.getByRole('button', { name: /who’s on your mind/i }).click(); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
+    check('on a phone that wants a tap first, the way in’s tap is it: the song plays as the stage opens, no pill', await t.waitForFunction(() => window.__sound.musicPlaying, null, { timeout: 6000 }).then(() => true, () => false) && !(await tapPill.isVisible()));
+    await t.goto(`${W}/stage`, { waitUntil: 'networkidle' }); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
+    check('…opened straight on the stage, a pill asks for the tap the moment it opens', await tapPill.waitFor({ timeout: 6000 }).then(() => true, () => false) && !(await playing()));
     await t.screenshot({ path: `${SHOTS}/stage-tap-pill.png` });
     await tapPill.click();
     check('…and the tap starts the song', await t.waitForFunction(() => window.__sound.musicPlaying, null, { timeout: 6000 }).then(() => true, () => false) && await tapPill.waitFor({ state: 'hidden', timeout: 4000 }).then(() => true, () => false));

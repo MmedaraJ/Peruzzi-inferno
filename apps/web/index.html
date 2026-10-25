@@ -13,8 +13,13 @@
     <link rel="icon" type="image/png" href="/favicon.png" />
     <link rel="apple-touch-icon" href="/media/img/icon-180.png" />
     <script>
-      // the stage opens on Peruzzi under the light: ask for him now, alongside the page's code, not after it
-      if (!/^\/(admin|question|tracks)\b/.test(location.pathname)) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = '/media/img/stage-1200.webp'; l.setAttribute('imagesrcset', '/media/img/stage-600.webp 600w, /media/img/stage-1200.webp 1200w'); l.setAttribute('imagesizes', '(max-width: 520px) 100vw, 520px'); l.setAttribute('fetchpriority', 'high'); document.head.appendChild(l); }
+      // the way in opens on the cover, the stage on Peruzzi under the light: ask for the one the page shows now, alongside
+      // the page's code, not after it
+      (function (p) {
+        var img = function (src, set, sizes) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = src; l.setAttribute('imagesrcset', set); l.setAttribute('imagesizes', sizes); l.setAttribute('fetchpriority', 'high'); document.head.appendChild(l); };
+        if (p === '/') img('/media/img/cover-1200.jpg', '/media/img/cover-600.jpg 600w, /media/img/cover-1200.jpg 1200w', '(max-aspect-ratio: 1/1) 100vh, 100vw');
+        else if (!/^\/(admin|question|tracks)\b/.test(p)) img('/media/img/stage-1200.webp', '/media/img/stage-600.webp 600w, /media/img/stage-1200.webp 1200w', '(max-width: 520px) 100vw, 520px');
+      })(location.pathname);
     </script>
   </head>
   <body class="grain">

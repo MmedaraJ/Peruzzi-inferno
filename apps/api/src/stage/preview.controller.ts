@@ -14,10 +14,10 @@ export class PreviewController {
 
   @Get('q/:code')
   async note(@Param('code') code: string, @Req() req: Request, @Res() res: Response) {
-    const k = await this.prisma.note.findUnique({ where: { code: String(code).slice(0, 16) }, select: { id: true, code: true, hidden: true, status: true, dear: true, line: true, notebook: { select: { name: true } } } });
+    const k = await this.prisma.note.findUnique({ where: { code: String(code).slice(0, 16) }, select: { id: true, code: true, hidden: true, status: true, dear: true, line: true, verdict: true, notebook: { select: { name: true } } } });
     const ok = k && !k.hidden && k.status === 'asked';
     const title = ok ? `${k!.notebook.name || 'Someone'} asked Peruzzi to ask ${k!.dear}: could this be love?` : 'Peruzzi Asks';
-    const desc = (ok ? `${k!.line} Peruzzi asks: could this be love?` : 'Write someone a note. Peruzzi will ask them for you.').slice(0, 190);
+    const desc = (ok ? `${k!.line} Peruzzi asks: could this be love?${k!.verdict ? ` ${k!.verdict}.` : ''}` : 'Write someone a note. Peruzzi will ask them for you.').slice(0, 190);
     // whether a phone has sent its card yet, asked without reading the image
     const card = ok && (await this.prisma.note.count({ where: { id: k!.id, card: { not: null } } })) > 0;
     const img = card ? `${this.cfg.apiFor(req)}/api/cards/n/${k!.code}.jpg` : `${this.cfg.siteFor(req)}/media/img/og.jpg`;

@@ -20,17 +20,19 @@ import { OneNote } from './OneNote';
 import { Tracklist } from './Tracklist';
 import { SendSheet } from './SendSheet';
 import { Answer } from './Answer';
+import { Landing } from './Landing';
 import { paperOf } from './NoteView';
 
 type Status = 'loading' | 'ready' | 'closed' | 'done' | 'error';
 type Card = { file?: File; ready: Promise<File> };
-type View = 'write' | 'notes' | 'note' | 'tracklist' | 'answer';
+type View = 'landing' | 'write' | 'notes' | 'note' | 'tracklist' | 'answer';
 
 /** the notes Peruzzi has read so far (a note he put down for help isn't kept) */
 export const askedOf = (d: Notebook | null) => (d?.notes || []).filter((k) => k.status !== 'serious' && k.kind);
 const viewOf = (path: string): { view: View | null; id?: string } => {
   const p = path.replace(/\/+$/, '') || '/';
-  if (p === '/') return { view: 'write' };
+  if (p === '/') return { view: 'landing' };
+  if (p === '/stage') return { view: 'write' };
   if (p === '/notes') return { view: 'notes' };
   const n = /^\/notes\/([\w-]+)$/.exec(p); if (n) return { view: 'note', id: n[1] };
   if (p === '/tracklist') return { view: 'tracklist' };
@@ -38,24 +40,26 @@ const viewOf = (path: string): { view: View | null; id?: string } => {
   return { view: null };
 };
 
-/** Peruzzi Asks, from the first note to the tracklist, and the note as the person it's for opens it. Each screen has
- *  its own address (so the phone's back button goes where you'd expect), and this one component holds them all, so
- *  the song and the notebook carry on throughout:
+/** Peruzzi Asks, from the way in to the tracklist, and the note as the person it's for opens it. Each screen has its
+ *  own address (so the phone's back button goes where you'd expect), and this one component holds them all, so the
+ *  song and the notebook carry on throughout:
  *
- *    /                a note: "Dear ___, you ___.", Peruzzi's reading, and the note with his question on it
- *                     (?back=<ask> writes back to the one who sent that ask)
+ *    /                the way in: the cover under the lights, the song, and the stage (its tap starts the song)
+ *    /stage           a note: "Dear ___, you ___.", Peruzzi's reading, and the note with his question on it, and
+ *                     his answer (?back=<ask> writes back to the one who sent that ask)
  *    /notes           your notes, with where each has got to
  *    /notes/:id       a note already asked, to save, post or send
  *    /tracklist       the tracklist
  *    /answer/:code    a note sent to you: open it, and write one back
  *
- *  There's no front page: the site opens on a note. Back from a note's page is your notes; back from your notes is a
- *  new note. */
+ *  Back from a note's page is your notes; back from your notes is a new note. */
 export default function Asked() {
   const nav = useNavigate(); const loc = useLocation(); const [params] = useSearchParams();
   const { go, up } = mover(nav);
   const { view, id } = viewOf(loc.pathname);
   const backCode = view === 'write' ? params.get('back') : null;
+  // the old address for writing back, from before there was a way in, still goes straight to the stage
+  const oldBack = view === 'landing' ? params.get('back') : null;
   const [cfg, setCfg] = useState<StageConfig | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [message, setMessage] = useState('');
@@ -70,7 +74,6 @@ export default function Asked() {
   useVisualViewport();
 
   useEffect(() => {
-    track('stage_view', { view: view || 'none', back: !!backCode });
     sound.setOn(store.soundOn());
     (async () => {
       try {
@@ -80,7 +83,7 @@ export default function Asked() {
         const answer = saved ? (early?.notebook?.id === saved.id ? early.notebook.answer : api.notebook(saved.id, saved.token).catch(() => null)) : null;
         const c = await (early?.stage ?? api.stage());
         setCfg(c); sound.setLevels(c.music.level, c.music.duck); sound.setCrowd(c.sfx);
-        if (!c.open && view !== 'answer') { setMessage(c.pausedMessage); setStatus('closed'); return; }
+        if (!c.open && view !== 'answer' && view !== 'landing') { setMessage(c.pausedMessage); setStatus('closed'); return; }
         const d = await answer;
         if (d && saved) { token.current = saved.token; setNotebook(d); }
         setStatus('ready');
@@ -90,11 +93,14 @@ export default function Asked() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // the stage seen, once a visit, the moment one of its screens is (the way in counts its own)
+  const seenStage = useRef(false);
+  useEffect(() => { if (view && view !== 'landing' && !seenStage.current) { seenStage.current = true; track('stage_view', { view, back: !!backCode }); } }, [view, backCode]);
   // the note's fonts and cover, so the paper is drawn the moment it comes
   useEffect(() => { if (status === 'ready') return whenIdle(preloadNote); }, [status]);
-  // the song, on every screen, from the moment the stage opens (or the first tap, on a phone that wants one first), and
-  // again with each new note (a note put down for help stops it)
-  useEffect(() => { if (status === 'ready' && view) sound.playOnStage(); }, [status, view, writing?.key]);
+  // the song, on every screen past the way in, from the moment the stage opens (the way in starts it with its tap; a
+  // phone that wants a tap first gets the pill), and again with each new note (a note put down for help stops it)
+  useEffect(() => { if (status === 'ready' && view && view !== 'landing') sound.playOnStage(); }, [status, view, writing?.key]);
 
   // a note belongs to its visit: once its screen is left, coming back to it (forward, a reload) starts a new one
   const lastView = useRef(view);
@@ -147,7 +153,7 @@ export default function Asked() {
    *  one who sent the note it answers (its first note only). */
   const newNote = (o: { replace?: boolean } = {}) => {
     setWriting({ key: Date.now() });
-    if (view !== 'write' || backCode) go('/', o);
+    if (view !== 'write' || backCode) go('/stage', o);
   };
   const stopped = (e: ApiError) => {
     if (e.status === 429 && (e.reason === 'daily' || e.reason === 'network')) { setMessage(e.message); setStatus('done'); }
@@ -208,10 +214,12 @@ export default function Asked() {
   const shown = view === 'note' ? notebook?.notes.find((k) => k.id === id) : undefined;
   useEffect(() => { if (shown?.kind && !cards.current.has(shown.id)) prepare(shown, false); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [shown?.id]);
 
+  if (oldBack) return <Navigate to={`/stage?back=${encodeURIComponent(oldBack)}`} replace />;
   if (!cfg || status === 'loading') return <Splash />;
+  if (view === 'landing') return <><Landing cfg={cfg} onStage={() => go('/stage')} /><MusicPill /></>;
   if (view === 'answer') return (
     <div className="min-h-dvh bg-ink">
-      <Answer cfg={cfg} code={id!} onBack={() => go('/')} onWrite={() => go('/')} onWriteBack={() => go(`/?back=${encodeURIComponent(id!)}`)} />
+      <Answer cfg={cfg} code={id!} onBack={() => go('/stage')} onWrite={() => go('/stage')} onWriteBack={() => go(`/stage?back=${encodeURIComponent(id!)}`)} />
       <MusicPill />
     </div>
   );
@@ -237,15 +245,15 @@ export default function Asked() {
         {...actions} />
     );
   } else if (view === 'notes') {
-    if (!notebook) return <Navigate to="/" replace />;
-    screen = <Notes notebook={notebook} onBack={() => up('/')} onOpen={(k) => go(`/notes/${k.id}`)} onWrite={() => newNote()} onTracklist={() => go('/tracklist')} />;
+    if (!notebook) return <Navigate to="/stage" replace />;
+    screen = <Notes notebook={notebook} onBack={() => up('/stage')} onOpen={(k) => go(`/notes/${k.id}`)} onWrite={() => newNote()} onTracklist={() => go('/tracklist')} />;
   } else if (view === 'note') {
-    if (!notebook) return <Navigate to="/" replace />;
+    if (!notebook) return <Navigate to="/stage" replace />;
     if (!shown?.kind) return <Navigate to="/notes" replace />;
     const primary = notebook.left > 0 ? { label: 'Write another note', go: () => newNote() } : null;
     screen = <OneNote cfg={cfg} note={shown} notes={notebook.notes} primary={primary} onBack={() => up('/notes')} onNotes={() => up('/notes')} {...actions} />;
   } else if (view === 'tracklist') {
-    if (!notebook) return <Navigate to="/" replace />;
+    if (!notebook) return <Navigate to="/stage" replace />;
     // the tracklist is there from the first note, and grows with every one after
     if (!asked.length) return <Navigate to="/notes" replace />;
     screen = <Tracklist cfg={cfg} notebook={notebook} token={token.current} onUpdate={(d) => setNotebook(d)} onWrite={notebook.left > 0 ? () => newNote() : null} onBack={() => up('/notes')} />;

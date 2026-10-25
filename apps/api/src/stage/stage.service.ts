@@ -8,7 +8,7 @@ import { STAGE_DEFAULTS, StageConfig } from '../common/defaults';
 import { code, firstName, noteNo, startOfDay, token as newToken } from '../common/util';
 import { aiAvailable } from './ai';
 import { clean, Cleaned } from './redact';
-import { fallbackReading } from './fallback';
+import { fallbackReading, fallbackVerdict } from './fallback';
 import { noteReading, peruzziModel, read, Reading, ReadingResult, seriousReading } from './peruzzi';
 import { VoiceService } from './voice.service';
 
@@ -19,7 +19,7 @@ export interface WriteDto { who: string; what: string; name?: string }
 /** Every column but the card images (JPEGs of up to 3 MB): only the endpoints that serve a card read them. */
 export const NOTE_COLUMNS = {
   id: true, seq: true, code: true, notebookId: true, n: true, dear: true, thing: true, title: true, statement: true, status: true, kind: true,
-  line: true, seenAt: true, fallback: true, flags: true, hidden: true,
+  line: true, verdict: true, seenAt: true, fallback: true, flags: true, hidden: true,
   model: true, tokensIn: true, tokensOut: true, cacheRead: true, cacheWrite: true, ms: true, createdAt: true, askedAt: true,
 } as const satisfies Prisma.NoteSelect;
 export const NOTEBOOK_COLUMNS = { id: true, code: true, token: true, device: true, ip: true, name: true, city: true, backOf: true, tracklistAt: true, createdAt: true } as const satisfies Prisma.NotebookSelect;
@@ -53,14 +53,14 @@ class LastHour {
 export function noteView(k: NoteRow & { asks?: { backAt: Date | null }[] }) {
   return {
     id: k.id, code: k.code, noteNo: noteNo(k.seq), n: k.n, dear: k.dear, thing: k.thing, title: k.title, status: k.status,
-    kind: k.kind, line: k.line, seenAt: k.seenAt, sent: (k.asks?.length ?? 0) > 0, wroteBack: !!k.asks?.some((a) => a.backAt), createdAt: k.createdAt,
+    kind: k.kind, line: k.line, verdict: k.verdict, seenAt: k.seenAt, sent: (k.asks?.length ?? 0) > 0, wroteBack: !!k.asks?.some((a) => a.backAt), createdAt: k.createdAt,
   };
 }
 /** A note as anyone with its link sees it: the line as Peruzzi told it, never what was typed. */
 export function publicNote(k: NoteRow, writer?: { name: string | null; city: string | null } | null) {
   return {
     code: k.code, noteNo: noteNo(k.seq), dear: k.dear, thing: k.thing, title: k.title, kind: k.kind,
-    line: k.line || '',
+    line: k.line || '', verdict: k.verdict,
     writer: writer?.name ?? null, city: writer?.city ?? null, date: k.askedAt || k.createdAt,
   };
 }
@@ -265,7 +265,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
       const flags = new Set<string>([w.who.redacted || w.what.redacted ? 'redacted' : '', w.what.injection || w.who.injection ? 'injection' : '', w.what.danger || w.who.danger ? 'danger-words' : ''].filter(Boolean));
       const seed = Math.floor(Math.random() * 1000);
       let v: Reading;
-      if (ai) v = ai.reading;
+      if (ai) v = { ...ai.reading, verdict: ai.reading.verdict || (ai.reading.kind === 'serious' ? '' : fallbackVerdict(ai.reading.thing, seed)) };
       else { flags.add(!run ? 'ceiling' : r === undefined ? 'slow' : 'error'); v = flags.has('danger-words') ? seriousReading() : fallbackReading(w.who.text, w.what.text, seed); }
       const serious = v.kind === 'serious';
       if (serious) flags.add('serious');
@@ -278,7 +278,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
           dear: (!serious && v.dear) || w.who.text, thing: !serious && v.thing, title: serious ? 'Referred for help' : v.title,
           status: serious ? 'serious' : 'asked', fallback: !ai, model: ai?.model || peruzziModel(),
           tokensIn: ai?.usage.in || 0, tokensOut: ai?.usage.out || 0, cacheRead: ai?.usage.cacheRead || 0, cacheWrite: ai?.usage.cacheWrite || 0, ms: ai?.ms || 0,
-          ...(serious ? {} : { kind: v.kind, line: v.line, askedAt: new Date() }),
+          ...(serious ? {} : { kind: v.kind, line: v.line, verdict: v.verdict || null, askedAt: new Date() }),
         },
       });
       this.events.add('note_written', d.device, { back: !!d.backOf, drafted });
@@ -286,7 +286,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
       else this.events.add('note_asked', d.device, { kind: v.kind, thing: v.thing, fallback: !ai, drafted, ms: ai?.ms || 0 });
       // the reading starts now, so it's ready by the time the note lands and the phone asks for it
       const voiced = !serious && this.voiceReady() && c.voice.mode !== 'off';
-      if (voiced) this.voice.say(noteReading({ dear: v.dear, line: v.line, fallback: !ai })).catch(() => {});
+      if (voiced) this.voice.say(noteReading({ dear: v.dear, line: v.line, fallback: !ai, verdict: v.verdict })).catch(() => {});
       return { note: noteView(k), serious, line: serious ? SERIOUS_LINE : null, voice: voiced, left: await this.leftToday(c, d.device) };
     } finally { this.busy.delete(d.id); }
   }

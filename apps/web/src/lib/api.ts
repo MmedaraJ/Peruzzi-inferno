@@ -45,7 +45,7 @@ export type NoteKind = 'love' | 'not_love' | 'nonsense';
  *  got: `sent`, `seenAt` (opened by the one it's for), `wroteBack` (they've started a note back). */
 export interface NoteInfo {
   id: string; code: string; noteNo: string; n: number; dear: string; thing: boolean; title: string; status?: string; kind: NoteKind | null;
-  line: string | null; seenAt: string | null; sent: boolean; wroteBack: boolean; createdAt?: string;
+  line: string | null; verdict: string | null; seenAt: string | null; sent: boolean; wroteBack: boolean; createdAt?: string;
 }
 /** the note a notebook writes back to: who sent it, to whom, and what it said */
 export interface Back { sender: string; dear: string; line: string }
@@ -57,7 +57,7 @@ export interface Written { who: string; what: string; name?: string }
 export interface Asked { note: NoteInfo; serious: boolean; line: string | null; voice: boolean; left: number }
 /** A note as anyone with its link sees it: what they did, as Peruzzi told it, never what was typed. */
 export interface PublicNote {
-  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; line: string;
+  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; line: string; verdict: string | null;
   writer: string | null; city: string | null; date: string;
 }
 /** The note, for the person it was sent to: who it's from and what it says. */

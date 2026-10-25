@@ -30,8 +30,8 @@ export const EMAIL_DEFAULTS: Record<EmailKind, EmailTemplate> = {
   },
 };
 
-/** A note in an email: who it's to, what they did, and Peruzzi's question. */
-export interface NoteBox { noteNo?: string; title: string; dear: string; line: string }
+/** A note in an email: who it's to, what they did, Peruzzi's question, and his answer. */
+export interface NoteBox { noteNo?: string; title: string; dear: string; line: string; verdict?: string | null }
 export interface EmailParts { vars: Record<string, string>; boxes?: NoteBox[]; links: { cta?: string; cta2?: string; cta3?: string }; unsubscribe?: { url: string; label: string } }
 
 const fill = (s: string, vars: Record<string, string>) => s.replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
@@ -50,6 +50,7 @@ export function renderEmail(t: EmailTemplate, p: EmailParts) {
         <tr><td style="padding:2px 18px 6px;font:24px/1.3 Georgia,serif;color:${INK}">Dear ${esc(b.dear)},</td></tr>
         <tr><td style="padding:0 18px 14px;font:18px/1.5 Georgia,serif;color:${INK}">${esc(b.line)}</td></tr>
         <tr><td style="padding:0 18px 14px"><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td style="padding:12px 16px;border-radius:6px;background:${ROSE};color:#ffffff"><span style="font:700 11px/1.4 Georgia,serif;letter-spacing:.16em;text-transform:uppercase;color:${BLUSH}">Peruzzi asks</span><br><span style="font:24px/1.3 Georgia,serif">Could this be love?</span></td></tr></table></td></tr>
+        ${b.verdict ? `<tr><td style="padding:0 18px 14px;text-align:center"><span style="font:700 11px/1.4 Georgia,serif;letter-spacing:.16em;text-transform:uppercase;color:${ROSE}">Peruzzi answers</span><br><span style="font:26px/1.3 Georgia,serif;color:${INK}">${esc(b.verdict)}.</span></td></tr>` : ''}
         ${song ? `<tr><td style="padding:0 18px 14px;text-align:right;font:600 10px/1.4 Georgia,serif;letter-spacing:.16em;text-transform:uppercase;color:${ASH}">${esc(song)}</td></tr>` : ''}
       </table>
     </td></tr>`;
@@ -76,7 +77,7 @@ export function renderEmail(t: EmailTemplate, p: EmailParts) {
     'PERUZZI ASKS', '',
     ...paras.flatMap((x) => [x, '']),
     ...(p.boxes || []).flatMap((b) => [
-      `${b.noteNo ? `Note ${b.noteNo} · ` : ''}${b.title}`, `Dear ${b.dear},`, b.line, 'Peruzzi asks: Could this be love?', ...(song ? [song] : []), '',
+      `${b.noteNo ? `Note ${b.noteNo} · ` : ''}${b.title}`, `Dear ${b.dear},`, b.line, 'Peruzzi asks: Could this be love?', ...(b.verdict ? [`Peruzzi answers: ${b.verdict}.`] : []), ...(song ? [song] : []), '',
     ]),
     ...(t.cta && p.links.cta ? [`${fill(t.cta, v)}: ${p.links.cta}`] : []),
     ...(t.cta2 && p.links.cta2 ? [`${fill(t.cta2, v)}: ${p.links.cta2}`] : []),

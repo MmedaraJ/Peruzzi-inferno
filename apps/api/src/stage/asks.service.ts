@@ -116,7 +116,7 @@ export class AsksService {
     const m = renderEmail((await this.cfg.emails()).ask, {
       vars: { sender: senderName, senderMask: maskEmail(sender.email), recipient: recipientName || k.dear, site: this.cfg.siteName, artist: site.artist, song: site.song },
       boxes: [this.box(k)],
-      links: { cta: this.askUrl(a.code), cta2: `${this.cfg.webUrl}/?back=${a.code}`, cta3: site.smartLink },
+      links: { cta: this.askUrl(a.code), cta2: `${this.cfg.webUrl}/stage?back=${a.code}`, cta3: site.smartLink },
       unsubscribe: { url: unsub, label: 'Never send me notes again' },
     });
     const r = await this.mail.send(to, m.subject, m.html, m.text, { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
@@ -126,8 +126,8 @@ export class AsksService {
     return { ok: true, code: a.code, left: Math.max(0, c.asksPerDay - sent - 1) };
   }
 
-  private box(k: { seq: number; title: string; dear: string; line: string | null }): NoteBox {
-    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '' };
+  private box(k: { seq: number; title: string; dear: string; line: string | null; verdict: string | null }): NoteBox {
+    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '', verdict: k.verdict };
   }
 
   // ---- the person asked -----------------------------------------------------------------------------------------
@@ -166,7 +166,7 @@ export class AsksService {
     const m = renderEmail((await this.cfg.emails()).tracklist, {
       vars: { name: d.name || 'Lover', site: this.cfg.siteName, artist: site.artist, song: site.song },
       boxes: notes.map((k) => this.box(k)),
-      links: { cta: `${this.cfg.webUrl}/t/${d.code}`, cta2: `${this.cfg.webUrl}/`, cta3: site.smartLink },
+      links: { cta: `${this.cfg.webUrl}/t/${d.code}`, cta2: `${this.cfg.webUrl}/stage`, cta3: site.smartLink },
       unsubscribe: { url: unsub, label: 'Stop these emails' },
     });
     const r = await this.mail.send(e, m.subject, m.html, m.text, { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });

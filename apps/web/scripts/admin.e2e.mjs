@@ -16,7 +16,8 @@ try {
   check('the status says whether the server knows the site’s address', await p.getByText(/Addresses: /).isVisible());
   check('the insights load: the way from the stage to sharing, what the notes were about, opened and written back', await p.getByRole('heading', { name: 'What the notes were about' }).isVisible()
     && await p.getByText('Peruzzi read it').isVisible() && await p.getByText('Opened by the one asked').isVisible() && await p.getByText('Written back', { exact: true }).isVisible());
-  check('…and no answers: there are none to count', await p.getByRole('heading', { name: 'The answers' }).count() === 0 && await p.getByText(/ticked yes|Answered/).count() === 0);
+  check('…and the kinds of love Peruzzi named', await p.getByRole('heading', { name: 'The kinds of love' }).isVisible());
+  check('…and no answers from the people asked: there are none to count', await p.getByRole('heading', { name: 'The answers' }).count() === 0 && await p.getByText(/ticked yes|Answered/).count() === 0);
   const ins = await (await fetch(`${A}/api/admin/insights`, { headers: H })).json();
   check('…counted from the notes themselves', ins.totals.asked <= ins.totals.notes && ins.totals.seen <= ins.totals.asked && !('answered' in ins.totals) && !('answers' in ins), JSON.stringify({ notes: ins.totals.notes, asked: ins.totals.asked, seen: ins.totals.seen }));
   await p.screenshot({ path: `${SHOTS}/admin-insights.png`, fullPage: true });
@@ -57,6 +58,9 @@ try {
   const cfg = await (await fetch(`${A}/api/stage/config`)).json();
   check('pausing the stage reaches the site', cfg.open === false);
   const q = await b.newPage(); await q.goto(`${W}/`, { waitUntil: 'networkidle' });
+  check('the way in says so too, with the song still there to play', await q.getByRole('heading', { name: 'between sets' }).waitFor({ timeout: 8000 }).then(() => true, () => false) && await q.getByText(cfg.pausedMessage).isVisible()
+    && await q.getByRole('link', { name: /Listen to Inferno/ }).isVisible() && await q.getByRole('button', { name: /who’s on your mind/i }).count() === 0);
+  await q.goto(`${W}/stage`, { waitUntil: 'networkidle' });
   check('a paused stage says Peruzzi is between sets, with the message', await q.getByRole('heading', { name: 'between sets' }).waitFor({ timeout: 8000 }).then(() => true, () => false) && await q.getByText(cfg.pausedMessage).isVisible());
   const asks = await (await fetch(`${A}/api/admin/asks`, { headers: H })).json();
   if (asks.length) {

@@ -154,7 +154,7 @@ export class AdminController {
     const site = await this.cfg.site();
     const m = renderEmail(t, {
       vars: { code: '402719', sender: 'Tọ́kẹ́', senderMask: 't***@gmail.com', recipient: 'Dayo', name: 'Tọ́kẹ́', site: this.cfg.siteName, artist: site.artist, song: site.song },
-      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'You guarded the last puff-puff for me like it was your WAEC result.' }],
+      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'You guarded the last puff-puff for me like it was your WAEC result.', verdict: 'Puff-Puff Love' }],
       links: { cta: `${this.cfg.webUrl}/`, cta2: `${this.cfg.webUrl}/`, cta3: site.smartLink },
       unsubscribe: kind === 'code' ? undefined : { url: `${this.cfg.webUrl}`, label: kind === 'ask' ? 'Never send me notes again' : 'Stop these emails' },
     });

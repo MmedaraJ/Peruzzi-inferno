@@ -79,6 +79,8 @@ model Note {
   kind       String?
   /// what they did, as Peruzzi tells it to them: "You guarded the last puff-puff for me like it was your WAEC result."
   line       String?
+  /// Peruzzi's answer to his own question: the kind of love it is, in two words at most ("Puff-Puff Love")
+  verdict    String?
   /// when the person asked first opened it
   seenAt     DateTime?
   /// a prepared line stood in for the AI
