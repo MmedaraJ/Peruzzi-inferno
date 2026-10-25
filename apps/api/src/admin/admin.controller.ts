@@ -44,7 +44,7 @@ export class AdminController {
       status: {
         ai: aiAvailable(), model: peruzziModel(), effort: 'low',
         voice: this.voice.ready, artistVoice: !!process.env.ELEVENLABS_VOICE_ID, email: !!process.env.RESEND_API_KEY && senderReady(), resendKey: !!process.env.RESEND_API_KEY, from: process.env.MAIL_FROM || '',
-        webUrl: this.cfg.webUrl, apiUrl: this.cfg.apiUrl,
+        webUrl: this.cfg.webUrl, apiUrl: this.cfg.apiUrl, addresses: !!process.env.WEB_URL && !!process.env.API_URL,
       },
     };
   }
@@ -109,12 +109,12 @@ export class AdminController {
     else if (filter === 'flagged') where.flags = { hasSome: ['injection', 'refusal', 'error', 'danger-words'] };
     else if (filter === 'fallback') where.fallback = true;
     else if (filter === 'hidden') where.hidden = true;
-    else if (filter === 'answered') where.answer = { not: null };
+    else if (filter === 'seen') where.seenAt = { not: null };
     else if (filter && ['love', 'not_love', 'nonsense'].includes(filter)) where.kind = filter;
     if (before) where.seq = { lt: Number(before) };
     if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { dear: { contains: q, mode: 'insensitive' } }, { statement: { contains: q, mode: 'insensitive' } }];
     const rows = await this.prisma.note.findMany({ where, orderBy: { seq: 'desc' }, take: 40, select: { ...NOTE_COLUMNS, notebook: { select: { name: true, city: true, backOf: true } }, _count: { select: { asks: true } } } });
-    return rows.map((k) => ({ id: k.id, seq: k.seq, noteNo: noteNo(k.seq), code: k.code, n: k.n, dear: k.dear, title: k.title, status: k.status, kind: k.kind, answer: k.answer, flags: k.flags, fallback: k.fallback, hidden: k.hidden, createdAt: k.createdAt, writer: k.notebook.name, city: k.notebook.city, back: !!k.notebook.backOf, asks: k._count.asks, ms: k.ms }));
+    return rows.map((k) => ({ id: k.id, seq: k.seq, noteNo: noteNo(k.seq), code: k.code, n: k.n, dear: k.dear, title: k.title, status: k.status, kind: k.kind, seen: !!k.seenAt, flags: k.flags, fallback: k.fallback, hidden: k.hidden, createdAt: k.createdAt, writer: k.notebook.name, city: k.notebook.city, back: !!k.notebook.backOf, asks: k._count.asks, ms: k.ms }));
   }
   @Get('notes/:id')
   async one(@Param('id') id: string) {
@@ -123,7 +123,7 @@ export class AdminController {
     return {
       ...k, noteNo: noteNo(k.seq),
       notebook: { code: k.notebook.code, name: k.notebook.name, city: k.notebook.city, createdAt: k.notebook.createdAt },
-      asks: k.asks.map((a) => ({ channel: a.channel, status: a.status, senderName: a.senderName, recipientName: a.recipientName, recipientMask: a.recipientMask, openedAt: a.openedAt, answeredAt: a.answeredAt, backAt: a.backAt, createdAt: a.createdAt })),
+      asks: k.asks.map((a) => ({ channel: a.channel, status: a.status, senderName: a.senderName, recipientName: a.recipientName, recipientMask: a.recipientMask, openedAt: a.openedAt, backAt: a.backAt, createdAt: a.createdAt })),
     };
   }
   @Post('notes/:id/hide')
@@ -132,8 +132,8 @@ export class AdminController {
   // ---- people ----
   @Get('asks')
   async asks() {
-    const rows = await this.prisma.ask.findMany({ orderBy: { createdAt: 'desc' }, take: 60, include: { note: { select: { seq: true, title: true, dear: true, answer: true } } } });
-    return rows.map((a) => ({ code: a.code, channel: a.channel, status: a.status, senderName: a.senderName, recipientName: a.recipientName, recipientMask: a.recipientMask, noteNo: noteNo(a.note.seq), title: a.note.title, dear: a.note.dear, answer: a.note.answer, openedAt: a.openedAt, answeredAt: a.answeredAt, backAt: a.backAt, createdAt: a.createdAt }));
+    const rows = await this.prisma.ask.findMany({ orderBy: { createdAt: 'desc' }, take: 60, include: { note: { select: { seq: true, title: true, dear: true } } } });
+    return rows.map((a) => ({ code: a.code, channel: a.channel, status: a.status, senderName: a.senderName, recipientName: a.recipientName, recipientMask: a.recipientMask, noteNo: noteNo(a.note.seq), title: a.note.title, dear: a.note.dear, openedAt: a.openedAt, backAt: a.backAt, createdAt: a.createdAt }));
   }
   @Get('contacts')
   async contacts(@Query('format') format?: string, @Res({ passthrough: true }) res?: Response) {
@@ -154,7 +154,7 @@ export class AdminController {
     const site = await this.cfg.site();
     const m = renderEmail(t, {
       vars: { code: '402719', sender: 'Tọ́kẹ́', senderMask: 't***@gmail.com', recipient: 'Dayo', name: 'Tọ́kẹ́', site: this.cfg.siteName, artist: site.artist, song: site.song },
-      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'You guarded the last puff-puff for me like it was your WAEC result.', escape: 'I was full.', answer: kind === 'answered' ? 'yes' : null }],
+      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'You guarded the last puff-puff for me like it was your WAEC result.' }],
       links: { cta: `${this.cfg.webUrl}/`, cta2: `${this.cfg.webUrl}/`, cta3: site.smartLink },
       unsubscribe: kind === 'code' ? undefined : { url: `${this.cfg.webUrl}`, label: kind === 'ask' ? 'Never send me notes again' : 'Stop these emails' },
     });

@@ -3,10 +3,10 @@ import { Humour } from '../common/defaults';
 import { anthropic, aiAvailable, tidy, unsafeLine } from './ai';
 
 /** What Peruzzi makes of one note, on the spot: who it's to (as the note says it after "Dear"), whether that's a thing
- *  that can't answer, the note's title, what the person did told back to them in one funny line ("You …"), and the
- *  third box they can tick instead of Yes or No. The note itself asks the question: "Could this be love?" */
+ *  that can never read it, the note's title, and what the person did, told back to them in one funny line ("You …").
+ *  The note itself asks the question: "Could this be love?" */
 export type NoteKind = 'love' | 'not_love' | 'nonsense' | 'serious';
-export interface Reading { kind: NoteKind; dear: string; thing: boolean; title: string; line: string; escape: string }
+export interface Reading { kind: NoteKind; dear: string; thing: boolean; title: string; line: string }
 export interface ReadingResult { reading: Reading; model: string; usage: { in: number; out: number; cacheRead: number; cacheWrite: number }; ms: number }
 
 const KINDS: NoteKind[] = ['love', 'not_love', 'nonsense', 'serious'];
@@ -18,15 +18,14 @@ const SCHEMA = {
     thing: { type: 'boolean', description: 'True when the note is to something that can never read it: a bed, a food, a place, a team, a pet, a phone.' },
     title: { type: 'string', description: 'The note as Peruzzi titles it, like a track on an album: two to four words in title case ("Last Puff-Puff").' },
     line: { type: 'string', description: 'What the person did, told back to them in a funny way: one short sentence starting with "You", 6 to 16 words, ending in a full stop. The writer is "me".' },
-    escape: { type: 'string', description: 'The third box: the excuse the person asked would give for exactly this, in their own voice, first person, two to six words, ending in a full stop ("I was full.").' },
   },
-  required: ['kind', 'dear', 'thing', 'title', 'line', 'escape'],
+  required: ['kind', 'dear', 'thing', 'title', 'line'],
   additionalProperties: false,
 } as const;
 
 /** Peruzzi's character, for every note. Kept identical from request to request so it can be cached. */
 export function peruzziPrompt(artist: string, song: string) {
-  return `You are ${artist}, the Nigerian singer, at the mic at your own show. This is Peruzzi Asks, a fan experience for your song "${song}", whose hook asks "could this be love?". A fan passes you a note with one sentence on it: "Dear [someone], you [something they did]." It can be sweet ("you saved me the last puff-puff") or not ("you left me on read for three days"). You read it to the room, telling what they did in a way that makes everyone laugh, and then you ask the person it's for: "Could this be love?" They answer by ticking a box: Yes, No, or a third box you write for them. The note goes on the writer's story and straight to the person it's for, so your line has to make strangers laugh in two seconds and make the person it's for blush, or squirm.
+  return `You are ${artist}, the Nigerian singer, at the mic at your own show. This is Peruzzi Asks, a fan experience for your song "${song}", whose hook asks "could this be love?". A fan passes you a note with one sentence on it: "Dear [someone], you [something they did]." It can be sweet ("you saved me the last puff-puff") or not ("you left me on read for three days"). You read it to the room, telling what they did in a way that makes everyone laugh, and then you ask the person it's for: "Could this be love?" The note goes on the writer's story and straight to the person it's for, who can write one back, so your line has to make strangers laugh in two seconds and make the person it's for blush, or squirm.
 
 # You
 - You're the smoothest man in the building and the writer's biggest supporter: their wingman with a microphone. Take their side completely.
@@ -43,15 +42,14 @@ export function peruzziPrompt(artist: string, song: string) {
 - thing: true when the note is to something that can never read it (a bed, a food, a place, a team, a pet, a phone): the writer will post it rather than send it.
 - title: the note as you'd title it, like a track on an album: two to four words in title case, a little story on its own ("Last Puff-Puff", "Two Hours at the ATM", "Blue Ticks"). Never a lyric.
 - line: what they did, told back to them, funnier. One short sentence starting with "You", 6 to 16 words, ending in a full stop. Keep the facts and the writer's side of it (the writer is "me": "You saved me…"), so a stranger who reads only this line gets the story; the laugh is in how it's told. Take out anything the Never list forbids.
-- escape: the third box, the way out you give the person asked: the excuse they would give for exactly this, in their own voice, first person, two to six words, ending in a full stop. Funny and face-saving, never mean. For a note to a thing, what the thing would say ("I'm just a bed."). It sits under Yes and No, so it never says yes or no itself.
 
 # The voice (for the style and the length; never reuse these lines)
-"Dear Tolu, you saved the last puff-puff for me on purpose." → dear "Tolu"; kind "love"; title "Last Puff-Puff"; line "You guarded the last puff-puff for me like it was your WAEC result."; escape "I was full."
-"Dear Kemi, you queued at that ATM with me for two hours" → kind "love"; title "Two Hours at the ATM"; line "You stood in an ATM queue with me for two hours like it was our first date."; escape "I was also withdrawing."
-"Dear Emeka, you only call me when your data finishes" → kind "not_love"; title "Low Data"; line "You only remember my number when your data finishes, like I'm customer care."; escape "My data finished again."
-"Dear Chidi, you ate my jollof and blamed the generator" → kind "not_love"; title "The Generator Did It"; line "You ate my jollof, then blamed the generator like it has a mouth."; escape "The generator was hungry."
-"Dear my mum, you call me just to ask if I've eaten" → dear "Mum"; kind "love"; title "Have You Eaten"; line "You call me three times a day to confirm I've eaten, like it's your job."; escape "Have you eaten?"
-"Dear my bed, you hold me better than anyone ever has" → dear "Bed"; thing true; kind "love"; title "Nine Hours"; line "You hold me nine hours a night and never once ask where this is going."; escape "I'm just a bed."
+"Dear Tolu, you saved the last puff-puff for me on purpose." → dear "Tolu"; kind "love"; title "Last Puff-Puff"; line "You guarded the last puff-puff for me like it was your WAEC result."
+"Dear Kemi, you queued at that ATM with me for two hours" → kind "love"; title "Two Hours at the ATM"; line "You stood in an ATM queue with me for two hours like it was our first date."
+"Dear Emeka, you only call me when your data finishes" → kind "not_love"; title "Low Data"; line "You only remember my number when your data finishes, like I'm customer care."
+"Dear Chidi, you ate my jollof and blamed the generator" → kind "not_love"; title "The Generator Did It"; line "You ate my jollof, then blamed the generator like it has a mouth."
+"Dear my mum, you call me just to ask if I've eaten" → dear "Mum"; kind "love"; title "Have You Eaten"; line "You call me three times a day to confirm I've eaten, like it's your job."
+"Dear my bed, you hold me better than anyone ever has" → dear "Bed"; thing true; kind "love"; title "Nine Hours"; line "You hold me nine hours a night and never once ask where this is going."
 
 # Never
 - Full names, surnames, @handles, phone numbers, addresses or workplaces. A first name or a role only.
@@ -77,8 +75,8 @@ const fence = (s: string) => s.replace(/<\/?(note|stage)[^>]*>/gi, '').trim();
 
 export interface Written {
   who: string; what: string; humour: Humour; artist: string; song: string; writer?: string | null;
-  /** the note this one answers: who sent it, what it said, and how it was answered */
-  back?: { sender: string; dear: string; line: string; answer: string | null } | null;
+  /** the note this one writes back to: who sent it, and what it said */
+  back?: { sender: string; dear: string; line: string } | null;
 }
 
 /** Peruzzi's reading of "Dear <who>, you <what>.", or null when the AI can't give one in time. */
@@ -86,7 +84,7 @@ export async function read(w: Written, timeoutMs = 10_000): Promise<ReadingResul
   if (!aiAvailable()) return null;
   const model = peruzziModel(); const t0 = Date.now();
   try {
-    const back = w.back ? ` This note writes back to one the writer was sent: ${fence(w.back.sender)} wrote to ${fence(w.back.dear)}, "${fence(w.back.line)}"${w.back.answer ? `, and the writer ticked "${fence(w.back.answer)}"` : ''}. Now they write to ${fence(w.back.sender)}.` : '';
+    const back = w.back ? ` This note writes back to one the writer was sent: ${fence(w.back.sender)} wrote to ${fence(w.back.dear)}, "${fence(w.back.line)}". Now they write to ${fence(w.back.sender)}.` : '';
     const body: any = {
       model, max_tokens: 1500,
       // the quick model answers fastest without thinking first; the others think only as much as they must
@@ -112,7 +110,7 @@ export async function read(w: Written, timeoutMs = 10_000): Promise<ReadingResul
   } catch (e: any) { log.warn(`no reading: ${String(e?.message || e).slice(0, 160)}`); return null; }
 }
 
-export const seriousReading = (): Reading => ({ kind: 'serious', dear: '', thing: false, title: '', line: '', escape: '' });
+export const seriousReading = (): Reading => ({ kind: 'serious', dear: '', thing: false, title: '', line: '' });
 
 /** A sentence with its end mark: a full stop unless it already ends in one (or a question mark, or an ellipsis). */
 const ended = (t: string) => (t && !/[.!?…'’"”]$/.test(t) ? `${t}.` : t);
@@ -126,13 +124,6 @@ export function asLine(line: string) {
   if (t.length > 120) t = `${t.slice(0, 118).replace(/[\s,;:]+\S*$/, '')}…`;
   return ended(t);
 }
-/** The third box: a few words in their own voice, never yes or no. */
-export function asEscape(line: string) {
-  const t = line.trim().replace(/^[☐□\-–•\s]+/, '').replace(/^["“]|["”]$/g, '');
-  if (!t || /^(yes|no)\b[.!]?$/i.test(t)) return '';
-  return ended(t.length > 44 ? t.slice(0, 44).replace(/\s+\S*$/, '') : t);
-}
-
 /** Holds a reading to the shape the note needs, or null when it can't be used. */
 export function cleanReading(p: any): Reading | null {
   const kind: NoteKind = KINDS.includes(p?.kind) ? p.kind : 'love';
@@ -143,9 +134,8 @@ export function cleanReading(p: any): Reading | null {
     thing: p?.thing === true,
     title: tidy(p?.title, 40).replace(/[.!]+$/, ''),
     line: asLine(tidy(p?.line, 180)),
-    escape: asEscape(tidy(p?.escape, 60)),
   };
-  if (!r.dear || !r.title || r.line.length < 14 || !r.escape || [r.dear, r.title, r.line, r.escape].some(unsafeLine)) return null;
+  if (!r.dear || !r.title || r.line.length < 14 || [r.dear, r.title, r.line].some(unsafeLine)) return null;
   return r;
 }
 

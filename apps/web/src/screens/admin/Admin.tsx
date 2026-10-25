@@ -30,8 +30,8 @@ export default function Admin() {
   const save = async (key: string, value: any) => { const r = await admin.save(token, key, value); setCfg((c) => (c ? { ...c, values: { ...c.values, [key]: r.value } } : c)); return r.value; };
   const reset = async (key: string) => { const r = await admin.reset(token, key); setCfg((c) => (c ? { ...c, values: { ...c.values, [key]: r.value } } : c)); return r.value; };
   return (
-    <div className="min-h-dvh bg-[#11100e] text-bone">
-      <header className="sticky top-0 z-30 border-b border-bone/10 bg-[#11100e]/95 backdrop-blur">
+    <div className="min-h-dvh bg-ink text-bone">
+      <header className="sticky top-0 z-30 border-b border-bone/10 bg-ink/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 pt-3">
           <Wordmark size="sm" className="text-bone" /><p className="display text-[15px] text-bone/45">admin</p>
           <div className="flex-1" />
@@ -44,7 +44,7 @@ export default function Admin() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
         {cfg && <Status s={cfg.status} />}
-        {err && <p className="mb-4 border border-fire/50 px-3 py-2 text-[#f0c4c4]">{err}</p>}
+        {err && <p className="mb-4 border border-rose/60 px-3 py-2 text-petal">{err}</p>}
         {!cfg ? <p className="text-bone/60">Loading…</p> : (
           <>
             {tab === 'insights' && <Insights token={token} />}
@@ -71,7 +71,7 @@ function Login({ onIn }: { onIn: (token: string) => void }) {
         <div className="flex justify-center"><Wordmark size="lg" className="text-bone" /></div>
         <p className="caps mt-1 text-center text-[11px] text-bone/55">Admin</p>
         <input type="password" autoFocus value={p} onChange={(e) => setP(e.target.value)} placeholder="Password" className="mt-8 min-h-12 w-full border border-bone/25 bg-black/30 px-3.5 text-[17px] focus:border-bone/60 focus:outline-none" />
-        {err && <p className="mt-2 text-[14.5px] text-[#ff9aae]">{err}</p>}
+        {err && <p className="mt-2 text-[14.5px] text-petal">{err}</p>}
         <button disabled={busy || !p} className="mt-4 min-h-12 w-full bg-bone font-semibold text-ink disabled:opacity-40">{busy ? 'Checking…' : 'Sign in'}</button>
       </form>
     </div>
@@ -85,6 +85,7 @@ function Status({ s }: { s: any }) {
       <span className="flex items-center gap-2">{dot(s.ai)} Peruzzi’s lines: {s.ai ? `${s.model} (effort ${s.effort})` : 'no AI key, so prepared lines only'}</span>
       <span className="flex items-center gap-2">{dot(s.voice)} Voice: {s.voice ? 'ElevenLabs connected' : 'not connected (needs ELEVENLABS_API_KEY)'}</span>
       <span className="flex items-center gap-2">{dot(s.email)} Email: {s.email ? `sending as ${s.from}` : s.resendKey ? 'off until MAIL_FROM is an address on a domain verified in Resend (the email options stay hidden)' : 'not connected (emails are logged, not sent)'}</span>
+      <span className="flex items-center gap-2">{dot(s.addresses)} Addresses: {s.addresses ? s.webUrl : 'WEB_URL and API_URL aren’t both set on the server, so the links in emails point at localhost (shared links still work)'}</span>
     </div>
   );
 }

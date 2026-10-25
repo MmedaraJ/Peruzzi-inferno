@@ -4,13 +4,12 @@ import { admin } from '../../lib/api';
 import { Sheet } from '../../components/Sheet';
 import { ago, inputCls } from './kit';
 
-const FILTERS: [string, string][] = [['all', 'All'], ['flagged', 'Flagged'], ['serious', 'Put down for help'], ['fallback', 'Prepared lines'], ['hidden', 'Hidden'], ['answered', 'Answered'], ['love', 'Sweet'], ['not_love', 'Not so sweet'], ['nonsense', 'Nonsense']];
+const FILTERS: [string, string][] = [['all', 'All'], ['flagged', 'Flagged'], ['serious', 'Put down for help'], ['fallback', 'Prepared lines'], ['hidden', 'Hidden'], ['seen', 'Opened'], ['love', 'Sweet'], ['not_love', 'Not so sweet'], ['nonsense', 'Nonsense']];
 const FLAG_WORDS: Record<string, string> = { injection: 'tried to steer Peruzzi', refusal: 'AI declined', error: 'AI error', slow: 'AI too slow', ceiling: 'hour’s AI limit reached', 'danger-words': 'danger words', redacted: 'details removed', serious: 'serious' };
-const ANSWERS: Record<string, string> = { yes: 'Yes', no: 'No', escape: 'Third box' };
 const KINDS: Record<string, string> = { love: 'Sweet', not_love: 'Not so sweet', nonsense: 'Nonsense' };
 
-/** Every note, newest first, to keep the stage safe: what was written, what Peruzzi said, where it was sent, how it
- *  was answered. What people typed is wiped after the retention period (Admin → The stage). */
+/** Every note, newest first, to keep the stage safe: what was written, what Peruzzi said, where it was sent, whether
+ *  it was opened. What people typed is wiped after the retention period (Admin → The stage). */
 export function Notes({ token }: { token: string }) {
   const [filter, setFilter] = useState('all'); const [q, setQ] = useState('');
   const [rows, setRows] = useState<any[]>([]); const [more, setMore] = useState(true); const [open, setOpen] = useState<any | null>(null);
@@ -29,10 +28,10 @@ export function Notes({ token }: { token: string }) {
           <button key={k.id} onClick={async () => setOpen(await admin.note(token, k.id))} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/[0.03]">
             <span className="tabular w-12 shrink-0 text-[13px] text-bone/45">{k.noteNo}</span>
             <span className="min-w-0 flex-1"><span className="block truncate text-[15.5px]">Dear {k.dear} · {k.title}</span>
-              <span className="block truncate text-[13px] text-bone/45">{[k.writer, k.city, k.back ? 'written back' : '', k.asks ? `${k.asks} sent` : '', k.answer ? `answered ${ANSWERS[k.answer] || k.answer}` : '', ago(k.createdAt)].filter(Boolean).join(' · ')}</span></span>
+              <span className="block truncate text-[13px] text-bone/45">{[k.writer, k.city, k.back ? 'written back' : '', k.asks ? `${k.asks} sent` : '', k.seen ? 'opened' : '', ago(k.createdAt)].filter(Boolean).join(' · ')}</span></span>
             {(k.flags.some((f: string) => ['injection', 'refusal', 'error', 'danger-words', 'serious'].includes(f)) || k.fallback) && <WarningIcon size={17} className="shrink-0 text-[#d9a35b]" />}
             {k.hidden && <span className="caps shrink-0 text-[10px] text-bone/45">Hidden</span>}
-            <span className={`caps shrink-0 text-[10.5px] ${k.kind ? 'text-[#ffb3a3]' : 'text-bone/40'}`}>{k.kind ? KINDS[k.kind] || k.kind : k.status === 'serious' ? 'Put down' : k.status}</span>
+            <span className={`caps shrink-0 text-[10.5px] ${k.kind ? 'text-petal' : 'text-bone/40'}`}>{k.kind ? KINDS[k.kind] || k.kind : k.status === 'serious' ? 'Put down' : k.status}</span>
           </button>
         ))}
         {!rows.length && <p className="px-4 py-6 text-[15px] text-bone/50">No notes here yet.</p>}
@@ -56,15 +55,14 @@ function NoteDetail({ k, onHide }: { k: any; onHide: (hidden: boolean) => void }
         <div className="ml-6 border-l-2 border-bone/20 pl-3"><p className="caps text-[9.5px] text-bone/45">As written</p><p className="mt-0.5 text-[15.5px] italic leading-snug text-bone/80">{k.statement}</p></div>
         {k.status === 'asked' ? (
           <div className="border border-bone/15 p-3 text-[14.5px]">
-            <p className="caps text-[10px] text-[#ffb3a3]">{KINDS[k.kind] || k.kind}</p>
+            <p className="caps text-[10px] text-petal">{KINDS[k.kind] || k.kind}</p>
             <p className="mt-1">{k.line}</p>
             <p className="mt-1">Peruzzi asks: Could this be love?</p>
-            <p className="mt-1 text-bone/70">☐ Yes ☐ No ☐ {k.escape}</p>
-            {k.answer && <p className="mt-1 text-[#ffb3a3]">Ticked: {k.answer === 'escape' ? k.escape : ANSWERS[k.answer]}{k.answeredAt ? ` · ${new Date(k.answeredAt).toLocaleString('en-GB')}` : ''}</p>}
+            {k.seenAt && <p className="mt-1 text-petal">Opened {new Date(k.seenAt).toLocaleString('en-GB')}</p>}
           </div>
         ) : <p className="text-[14.5px] text-bone/70">Peruzzi put the mic down and showed where to get help.</p>}
       </div>
-      {k.asks.length > 0 && <div className="mt-5"><p className="caps text-[10.5px] text-bone/55">Sent</p>{k.asks.map((a: any, i: number) => <p key={i} className="mt-1 text-[14.5px] text-bone/75">{a.channel === 'email' ? `Emailed to ${a.recipientMask}` : `Link${a.recipientName ? ` for ${a.recipientName}` : ''}`} by {a.senderName} · {a.status}{a.openedAt ? ' · opened' : ''}{a.answeredAt ? ' · answered' : ''}{a.backAt ? ' · written back' : ''}</p>)}</div>}
+      {k.asks.length > 0 && <div className="mt-5"><p className="caps text-[10.5px] text-bone/55">Sent</p>{k.asks.map((a: any, i: number) => <p key={i} className="mt-1 text-[14.5px] text-bone/75">{a.channel === 'email' ? `Emailed to ${a.recipientMask}` : `Link${a.recipientName ? ` for ${a.recipientName}` : ''}`} by {a.senderName} · {a.status}{a.openedAt ? ' · opened' : ''}{a.backAt ? ' · written back' : ''}</p>)}</div>}
       <div className="mt-6 flex gap-3">
         <button onClick={() => onHide(!k.hidden)} className="min-h-11 border border-bone/30 px-4">{k.hidden ? 'Show it again' : 'Hide from public links'}</button>
         {k.status === 'asked' && !k.hidden && <a href={`/question/${k.code}`} target="_blank" rel="noreferrer" className="flex min-h-11 items-center px-2 text-[14.5px] underline decoration-bone/30 underline-offset-4">Open its public page</a>}

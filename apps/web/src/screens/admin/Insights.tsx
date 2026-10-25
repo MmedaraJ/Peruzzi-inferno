@@ -3,7 +3,6 @@ import { admin } from '../../lib/api';
 import { Section } from './kit';
 
 const KINDS: Record<string, string> = { love: 'Something sweet', not_love: 'Something they shouldn’t have', nonsense: 'Nonsense' };
-const ANSWERS: Record<string, string> = { yes: 'Yes', no: 'No', escape: 'The third box' };
 const n = (x: number) => (x ?? 0).toLocaleString();
 
 /** How it's going: totals only, never anyone's words. */
@@ -17,7 +16,7 @@ export function Insights({ token }: { token: string }) {
   const kpis: [string, number, string?][] = [
     ['People', t.visitors], ['Notes written', t.notes], ['Notes Peruzzi asked', t.asked], ['Tracklists', t.tracklists],
     ['Notes sent by link', t.asksLinks], ['Notes emailed', t.asksEmail], ['Opened by the one asked', t.seen],
-    ['Answered', t.answered, `${t.yesRate}% ticked yes`], ['Written back', t.backs],
+    ['Written back', t.backs],
     ['Emails collected', t.contacts, `${n(t.marketing)} said yes to news`], ['Went to stream', t.streamClicks],
   ];
   return (
@@ -34,9 +33,6 @@ export function Insights({ token }: { token: string }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Section title="From the stage to sharing" note="People, not visits">
           {r.funnel.map((f: any) => <Bar key={f.step} label={f.step} value={f.people} max={top} right={top ? `${Math.min(100, Math.round((f.people / top) * 100))}%` : ''} />)}
-        </Section>
-        <Section title="The answers" note="What the people asked ticked">
-          {r.answers.length ? r.answers.map((v: any) => <Bar key={v.answer} label={ANSWERS[v.answer] || v.answer} value={v.n} max={r.answers[0].n} />) : <Empty />}
         </Section>
         <Section title="What the notes were about" note="As Peruzzi read them">
           {r.kinds.length ? r.kinds.map((v: any) => <Bar key={v.kind} label={KINDS[v.kind] || v.kind} value={v.n} max={r.kinds[0].n} />) : <Empty />}

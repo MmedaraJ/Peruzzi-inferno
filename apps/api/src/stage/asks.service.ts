@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { createHmac, randomInt, timingSafeEqual } from 'crypto';
 import { PrismaService } from '../common/prisma.service';
 import { ConfigService } from '../common/config.service';
@@ -6,7 +6,7 @@ import { emailReady, MailService } from '../common/mail.service';
 import { EventsService } from '../events/events.service';
 import { NoteBox, renderEmail } from '../common/emails';
 import { code, EMAIL_RE, esc, firstName, keyedHash, keyedHashes, maskEmail, normEmail, noteNo, signingSecrets, startOfDay } from '../common/util';
-import { Answer, ANSWERS, NOTE_COLUMNS, NOTEBOOK_COLUMNS, publicNote, StageService, TooMany } from './stage.service';
+import { NOTE_COLUMNS, NOTEBOOK_COLUMNS, publicNote, StageService, TooMany } from './stage.service';
 import { clean } from './redact';
 
 const sign = (s: string, key = signingSecrets()[0]) => createHmac('sha256', key).update(s).digest('base64url').slice(0, 32);
@@ -18,10 +18,9 @@ const clip = (s: string | undefined | null, n: number) => clean(s || '', n).text
 const needEmail = () => { if (!emailReady()) throw new BadRequestException({ message: 'Email isn’t switched on yet. Send the link instead.', reason: 'no-email' }); };
 
 /** Everything that leaves the stage by email or link, and comes back: proving an address, sending a note to the person
- *  it's for, their answer (and telling the writer, when the note went by email), the tracklist, and the opt-outs. */
+ *  it's for, that person opening it, the tracklist, and the opt-outs. */
 @Injectable()
 export class AsksService {
-  private log = new Logger('asks');
   constructor(private prisma: PrismaService, private cfg: ConfigService, private mail: MailService, private events: EventsService, private stage: StageService) {}
 
   // ---- contacts -------------------------------------------------------------------------------------------------
@@ -79,17 +78,17 @@ export class AsksService {
     if (k.status !== 'asked') throw new BadRequestException({ message: 'Peruzzi hasn’t read this note yet.', reason: 'unread' });
     return k;
   }
-  private answerUrl(code: string) { return `${this.cfg.webUrl}/a/${code}`; }
+  private askUrl(code: string) { return `${this.cfg.webUrl}/a/${code}`; }
 
-  /** A link the writer shares themselves (WhatsApp). The site sends nothing; the link is the key to answering, and a
-   *  note written back can be traced to it. */
+  /** A link the writer shares themselves (WhatsApp). The site sends nothing; the link is the key to opening the note,
+   *  and a note written back can be traced to it. */
   async link(noteId: string, token: string, senderName?: string, recipientName?: string) {
     const k = await this.noteFor(noteId, token);
     const sender = clip(firstName(senderName || k.notebook.name), 24) || 'Someone';
     const a = await this.prisma.ask.create({ data: { code: code(8), noteId: k.id, channel: 'link', senderName: sender, senderDevice: k.notebook.device, recipientName: clip(firstName(recipientName), 24) || null, status: 'link' } });
     if (!k.notebook.name && senderName) await this.prisma.notebook.update({ where: { id: k.notebookId }, data: { name: sender }, select: { id: true } });
     this.events.add('ask_link', k.notebook.device, { kind: k.kind });
-    return { code: a.code, url: this.answerUrl(a.code) };
+    return { code: a.code, url: this.askUrl(a.code) };
   }
 
   /** The site emails the note, from a writer who proved their address, to the person it's for. */
@@ -117,7 +116,7 @@ export class AsksService {
     const m = renderEmail((await this.cfg.emails()).ask, {
       vars: { sender: senderName, senderMask: maskEmail(sender.email), recipient: recipientName || k.dear, site: this.cfg.siteName, artist: site.artist, song: site.song },
       boxes: [this.box(k)],
-      links: { cta: this.answerUrl(a.code), cta2: `${this.cfg.webUrl}/?back=${a.code}`, cta3: site.smartLink },
+      links: { cta: this.askUrl(a.code), cta2: `${this.cfg.webUrl}/?back=${a.code}`, cta3: site.smartLink },
       unsubscribe: { url: unsub, label: 'Never send me notes again' },
     });
     const r = await this.mail.send(to, m.subject, m.html, m.text, { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
@@ -127,8 +126,8 @@ export class AsksService {
     return { ok: true, code: a.code, left: Math.max(0, c.asksPerDay - sent - 1) };
   }
 
-  private box(k: { seq: number; title: string; dear: string; line: string | null; escape: string | null; answer?: string | null }): NoteBox {
-    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '', escape: k.escape || '', answer: (k.answer as Answer) || null };
+  private box(k: { seq: number; title: string; dear: string; line: string | null }): NoteBox {
+    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '' };
   }
 
   // ---- the person asked -----------------------------------------------------------------------------------------
@@ -137,8 +136,8 @@ export class AsksService {
     if (!a || a.note.hidden || a.note.status !== 'asked') throw new NotFoundException();
     return a;
   }
-  /** The note, for the person it was sent to: who it's from, what it says, and their answer if they've given one. The
-   *  first time it's opened, the writer's phone shows it as seen. */
+  /** The note, for the person it was sent to: who it's from, and what it says. The first time it's opened, the
+   *  writer's phone shows it as seen. */
   async forAsk(code: string) {
     const a = await this.askFor(code);
     const now = new Date();
@@ -146,40 +145,6 @@ export class AsksService {
     if (!a.note.seenAt) { await this.prisma.note.update({ where: { id: a.noteId }, data: { seenAt: now }, select: { id: true } }); this.events.add('note_seen', null, { channel: a.channel }); }
     return { code: a.code, sender: a.senderName, recipient: a.recipientName, note: publicNote({ ...a.note, seenAt: a.note.seenAt || now }, a.note.notebook) };
   }
-  /** Their tick: Yes, No, or the third box. One answer per note: once it's ticked, it stays. A note that went by email
-   *  tells its writer. */
-  async answer(code: string, choice: string, device?: string) {
-    if (!ANSWERS.includes(choice as Answer)) throw new BadRequestException({ message: 'Tick one of the three.', reason: 'choice' });
-    const a = await this.askFor(code);
-    if (a.note.answer) return { note: publicNote(a.note, a.note.notebook), already: true };
-    const at = new Date();
-    // only the first tick counts, even if two arrive together
-    const done = await this.prisma.note.updateMany({ where: { id: a.noteId, answer: null }, data: { answer: choice, answeredAt: at, seenAt: a.note.seenAt || at } });
-    const k = await this.prisma.note.findUnique({ where: { id: a.noteId }, select: { ...NOTE_COLUMNS, notebook: { select: { name: true, city: true } } } });
-    if (!done.count) return { note: publicNote(k!, k!.notebook), already: true };
-    await this.prisma.ask.update({ where: { id: a.id }, data: { answeredAt: at } });
-    this.events.add('note_answered', device ? String(device).slice(0, 64) : null, { answer: choice, channel: a.channel, kind: k!.kind });
-    if (a.channel === 'email') this.tellWriter(a.id).catch((e) => this.log.warn(`answer notice: ${e}`));
-    return { note: publicNote(k!, k!.notebook), already: false };
-  }
-  /** The note that went by email was answered: its writer hears about it. */
-  private async tellWriter(askId: string) {
-    const a = await this.prisma.ask.findUnique({ where: { id: askId }, include: { note: { select: NOTE_COLUMNS } } });
-    if (!a || !a.senderEmail || !a.note.answer) return;
-    const writer = await this.prisma.contact.findUnique({ where: { email: a.senderEmail } });
-    if (!writer || writer.unsubscribedAt) return;
-    const site = await this.cfg.site();
-    const unsub = this.optOutUrl('contact', writer.id);
-    const m = renderEmail((await this.cfg.emails()).answered, {
-      vars: { sender: a.senderName, recipient: a.recipientName || a.note.dear, site: this.cfg.siteName, artist: site.artist, song: site.song },
-      boxes: [this.box(a.note)],
-      links: { cta: `${this.cfg.webUrl}/q/${a.note.code}`, cta2: `${this.cfg.webUrl}/`, cta3: site.smartLink },
-      unsubscribe: { url: unsub, label: 'Stop these emails' },
-    });
-    await this.mail.send(writer.email, m.subject, m.html, m.text, { 'List-Unsubscribe': `<${unsub}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click' });
-    this.events.add('answer_notice', null, {});
-  }
-
   /** "Email me my tracklist". */
   async emailTracklist(notebookId: string, token: string, email: string, marketing: boolean) {
     needEmail();
@@ -222,7 +187,7 @@ export class AsksService {
   }
   optOutPage(kind: string, done: boolean, action: string) {
     const what = kind === 'block' ? 'Nobody will be able to send you a note by email from here again.' : 'We won’t email you again.';
-    const body = done ? `<h1>Done.</h1><p>${what}</p>` : `<h1>${kind === 'block' ? 'Never be sent a note again?' : 'Stop our emails?'}</h1><p>${kind === 'block' ? 'Nobody will be able to send you a note by email from Peruzzi Asks.' : 'You’ll stop getting answers, tracklists and news.'}</p><form method="post" action="${esc(action)}"><button>Yes, stop them</button></form>`;
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peruzzi Asks</title><style>body{margin:0;background:#12050f;color:#fff2e8;font:18px/1.55 Georgia,serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}main{max-width:420px}h1{font-weight:400;font-size:30px;margin:0 0 12px}button{margin-top:16px;font:600 17px Georgia,serif;background:#ff3d4f;background-image:linear-gradient(110deg,#ffb627,#ff6a1f 32%,#ff2d55 66%,#d4157e);color:#fff;border:0;border-radius:6px;padding:14px 22px;cursor:pointer}</style></head><body><main><p style="letter-spacing:.3em;font-size:12px;text-transform:uppercase;opacity:.7">Peruzzi Asks</p>${body}</main></body></html>`;
+    const body = done ? `<h1>Done.</h1><p>${what}</p>` : `<h1>${kind === 'block' ? 'Never be sent a note again?' : 'Stop our emails?'}</h1><p>${kind === 'block' ? 'Nobody will be able to send you a note by email from Peruzzi Asks.' : 'You’ll stop getting tracklists and news.'}</p><form method="post" action="${esc(action)}"><button>Yes, stop them</button></form>`;
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peruzzi Asks</title><style>body{margin:0;background:#1d1418;color:#f7ecee;font:18px/1.55 Georgia,serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}main{max-width:420px}h1{font-weight:400;font-size:30px;margin:0 0 12px}button{margin-top:16px;font:600 17px Georgia,serif;background:#c86272;color:#fff;border:0;border-radius:6px;padding:14px 22px;cursor:pointer}button:hover{background:#b45464}</style></head><body><main><p style="letter-spacing:.3em;font-size:12px;text-transform:uppercase;color:#ffccd6">Peruzzi Asks</p>${body}</main></body></html>`;
   }
 }

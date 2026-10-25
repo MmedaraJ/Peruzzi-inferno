@@ -15,17 +15,20 @@ import { NoteView } from './NoteView';
 type Phase = 'write' | 'reading' | 'asked' | 'serious';
 /** how much each blank takes: a name or a role, and what they do in a line */
 export const WHO_MAX = 28, WHAT_MAX = 80;
-/** what the blanks suggest while they're empty, a pair at a time: something sweet, or something they shouldn't have */
+/** what the blanks suggest while they're empty, a pair at a time: always something they shouldn't have done */
 const EXAMPLES: [string, string][] = [
-  ['my crush', 'saved the last puff-puff for me on purpose'],
   ['Tobi', 'left me on read for three days, then liked my story'],
-  ['my mum', 'call me just to ask if I’ve eaten'],
   ['Emeka', 'only call me when your data finishes'],
-  ['my bestie', 'know my food order before I say it'],
   ['Chidi', 'ate my jollof and blamed the generator'],
-  ['Kemi', 'queued at that ATM with me for two hours'],
   ['my guy', 'borrowed my charger in 2023 and never returned it'],
-  ['my bed', 'hold me better than anyone ever has'],
+  ['my crush', 'replied “lol” to my three paragraphs'],
+  ['Kemi', 'said “I’m outside” while you were still in the shower'],
+  ['my ex', 'asked for my Netflix password on my birthday'],
+  ['Dayo', 'posted me on your status with my eyes closed'],
+  ['Funke', 'ordered for both of us and paid with my card'],
+  ['Bayo', 'flashed me at 2am, then said it was a wrong number'],
+  ['Ngozi', 'said “send your location” and never came'],
+  ['my neighbour', 'played your gospel at 5am on my one day off'],
 ];
 /** who's on stage while Peruzzi reads, left to right: the band, Peruzzi in the middle, the crowd. They give their
  *  word in that order, Peruzzi last. */
@@ -121,7 +124,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
   const handUp = () => {
     const a = who.trim(), b = what.trim();
     if (a.length < 2) { setHint('Who’s it for? A first name, or “my crush”, “my mum”.'); whoRef.current?.focus(); return; }
-    if (b.length < 3) { setHint('And what do they do?'); whatRef.current?.focus(); return; }
+    if (b.length < 3) { setHint('And what did they do?'); whatRef.current?.focus(); return; }
     setHint(null); setError(null);
     (document.activeElement as HTMLElement | null)?.blur?.();   // the keyboard goes: Peruzzi has the floor
     track('write', { back: !!back, length: b.length });
@@ -195,7 +198,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
       <div data-write className={`absolute inset-x-0 z-10 mx-auto flex w-full max-w-[520px] flex-col overflow-hidden bg-ink ${jolt ? 'jolt' : ''}`} style={{ top: 'var(--vvt, 0px)', bottom: 'var(--kb, 0px)' }}>
         <TopBar onExit={onNotes} left={
           <p className="truncate pl-2"><span className="caps text-[11px] text-bone/80">{note ? `Note ${note.noteNo}` : back ? 'Writing back' : 'Peruzzi Asks'}</span>{phase === 'asked' && note && <span className="text-[13px] text-bone/50"> · {note.title}</span>}</p>
-        } className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent" />
+        } className="absolute inset-x-0 top-0 bg-ink/70" />
         <div ref={box} className={`no-scrollbar relative flex min-h-0 flex-1 flex-col ${writing ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <StageScene ref={stage} nameplate={cfg.nameplate} className="shrink-0"
             style={{ height: stageH, marginTop: -slide, transition: 'height 0.5s, margin-top 0.2s cubic-bezier(0.16, 1, 0.3, 1)' }} />
@@ -218,10 +221,10 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
                       <h1 className="display mt-0.5 text-[25px] leading-tight text-bone/90">{back ? `write ${back.sender} back` : 'who’s on your mind?'}</h1>
                     </motion.div>
                   )}
-                  <Sheet who={who} what={what} example={EXAMPLES[ex]} whoRef={whoRef} whatRef={whatRef} locked={phase !== 'write'} nameplate={cfg.nameplate}
+                  <Sheet who={who} what={what} example={EXAMPLES[ex]} whoRef={whoRef} whatRef={whatRef} locked={phase !== 'write'}
                     onWho={(t) => { setWho(t); setHint(null); }} onWhat={(t) => { setWhat(t); setHint(null); }} onNext={() => whatRef.current?.focus()} onHandUp={handUp} />
-                  {(hint || error) && <p role="alert" className="mt-2.5 px-1 text-[15px] leading-snug text-[#ff9aae]">{hint || error}</p>}
-                  {cfg.readLive && !typing && <p className="mt-3 flex items-start gap-2 px-1 text-[14.5px] leading-snug text-bone/65"><MicrophoneStageIcon size={16} className="mt-0.5 shrink-0 text-[#ff8a6b]" /><span>Make it a good one. {cfg.artist} could read the best notes out live.</span></p>}
+                  {(hint || error) && <p role="alert" className="mt-2.5 px-1 text-[15px] leading-snug text-petal">{hint || error}</p>}
+                  {cfg.readLive && !typing && <p className="mt-3 flex items-start gap-2 px-1 text-[14.5px] leading-snug text-bone/65"><MicrophoneStageIcon size={16} className="mt-0.5 shrink-0 text-petal" /><span>Make it a good one. {cfg.artist} could read the best notes out live.</span></p>}
                   <div aria-hidden className="h-6" />
                 </form>
                 <AnimatePresence>{phase === 'reading' && <Reading panel={PANEL(cfg.nameplate)} lines={reading(cfg.nameplate, who)} lit={lit} nameplate={cfg.nameplate} />}</AnimatePresence>
@@ -234,7 +237,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
         {writing && (
           <div className={`shrink-0 border-t border-bone/10 bg-coal/90 px-5 pt-3 ${typing ? 'pb-3' : 'safe-b'}`}>
             <button type="submit" form={formId}
-              className="fire flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl px-6 text-[17.5px] font-semibold text-white shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)] transition-[transform,filter,opacity] duration-150 hover:brightness-110 active:scale-[0.985] disabled:opacity-60">
+              className="flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl bg-rose px-6 text-[17.5px] font-semibold text-white transition-[transform,background-color,opacity] duration-150 hover:bg-rose-deep active:scale-[0.985] disabled:opacity-60">
               <MicrophoneStageIcon size={20} weight="bold" /> {cfg.nameplate}, help me ask
             </button>
           </div>
@@ -244,16 +247,15 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
   );
 }
 
-/** The note, on the stage's paper: "Dear", the first blank, "You", the second, and under them Peruzzi's question and
- *  the three boxes it will be answered in, as the note will have them. The second counts down to its limit; Return in
- *  the first goes on to the second, and in the second hands the note up. */
-function Sheet({ who, what, example, whoRef, whatRef, locked, nameplate, onWho, onWhat, onNext, onHandUp }: {
+/** The note, on the stage's paper: "Dear", the first blank, "You", the second, as the note will have them. The second
+ *  counts down to its limit; Return in the first goes on to the second, and in the second hands the note up. */
+function Sheet({ who, what, example, whoRef, whatRef, locked, onWho, onWhat, onNext, onHandUp }: {
   who: string; what: string; example: [string, string]; whoRef: React.RefObject<HTMLInputElement>; whatRef: React.RefObject<HTMLTextAreaElement>; locked: boolean;
-  nameplate: string; onWho: (t: string) => void; onWhat: (t: string) => void; onNext: () => void; onHandUp: () => void;
+  onWho: (t: string) => void; onWhat: (t: string) => void; onNext: () => void; onHandUp: () => void;
 }) {
   const left = WHAT_MAX - what.length;
   const word = 'display shrink-0 text-[23px] leading-none text-paper-ink';
-  const blank = 'min-w-0 flex-1 rounded-none border-0 border-b-2 border-dashed border-paper-ink/35 bg-transparent px-1 text-[20px] italic text-paper-ink placeholder:text-paper-ink/35 placeholder:not-italic focus:border-solid focus:border-fire focus:outline-none disabled:opacity-70';
+  const blank = 'min-w-0 flex-1 rounded-none border-0 border-b-2 border-dashed border-paper-ink/35 bg-transparent px-1 text-[20px] italic text-paper-ink placeholder:text-paper-ink/35 placeholder:not-italic focus:border-solid focus:border-rose focus:outline-none disabled:opacity-70';
   /** the second blank's lines: with one in it, it's as tall as the first blank (36px) */
   const lines = 'block w-full resize-none overflow-hidden pb-1 pt-0.5 leading-[28px]';
   // the second blank is as tall as what's in it (the example, while it's empty), so its line sits under the words: a
@@ -266,8 +268,7 @@ function Sheet({ who, what, example, whoRef, whatRef, locked, nameplate, onWho, 
     return () => window.removeEventListener('resize', fit);
   }, [what, example, whatRef]);
   return (
-    <div className="paper relative -rotate-[0.4deg] overflow-hidden rounded-xl px-4 pb-3.5 pt-3 shadow-[0_22px_44px_-20px_rgba(0,0,0,0.95)]">
-      <span aria-hidden className="fire absolute inset-x-0 top-0 h-[5px]" />
+    <div className="paper relative -rotate-[0.4deg] overflow-hidden rounded-xl px-4 pb-3 pt-3 shadow-[0_22px_44px_-20px_rgba(0,0,0,0.95)]">
       <p className="caps border-b border-paper-ink/15 pb-1.5 text-[10px] text-paper-ink/55">Peruzzi Asks · Your note</p>
       <label className="mt-3.5 flex items-end gap-3">
         <span className={word}>Dear</span>
@@ -289,16 +290,7 @@ function Sheet({ who, what, example, whoRef, whatRef, locked, nameplate, onWho, 
             className={`${blank} ${lines} pointer-events-none invisible absolute inset-x-0 top-0`} style={{ fontStyle: what ? 'italic' : 'normal' }} />
         </span>
       </label>
-      <p className="mt-1 text-right"><span id="what-count" className={`tabular text-[12.5px] ${left <= 10 ? 'text-fire' : 'text-paper-ink/45'}`}>{what.length}/{WHAT_MAX}</span></p>
-      {/* Peruzzi's question, and the boxes they'll answer in, faint until then: the third is Peruzzi's to write */}
-      <div className="fire mt-2 rounded-lg px-3 py-2 text-center text-white">
-        <p className="caps text-[9.5px] text-white/90">{nameplate} asks</p>
-        <p className="display text-[21px] leading-tight">Could this be love?</p>
-      </div>
-      <p aria-hidden className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-paper-ink/45">
-        {['Yes', 'No', '…'].map((l) => <span key={l} className="inline-flex items-center gap-1.5"><span className="inline-block h-[13px] w-[13px] rounded-[2px] border-[1.5px] border-paper-ink/40" />{l}</span>)}
-        <span className="caps text-[9px] text-paper-ink/40">They tick one</span>
-      </p>
+      <p className="mt-1 text-right"><span id="what-count" className={`tabular text-[12.5px] ${left <= 10 ? 'text-rose' : 'text-paper-ink/45'}`}>{what.length}/{WHAT_MAX}</span></p>
     </div>
   );
 }
@@ -327,9 +319,9 @@ function Reading({ panel, lines, lit, nameplate }: { panel: string[]; lines: [nu
           const busy = !status && who === i;
           return (
             <div key={p} className="flex flex-col items-center">
-              <motion.div data-lit={on ? '' : undefined} className={`relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl px-1.5 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] transition-[background-color,box-shadow,color] duration-200 ${on ? 'fire text-white shadow-[0_0_34px_-4px_rgba(255,45,85,0.75)]' : 'paper text-paper-ink/80'} ${i === 1 ? 'h-[122px]' : 'h-[108px]'}`}
+              <motion.div data-lit={on ? '' : undefined} className={`relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl px-1.5 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] transition-[background-color,box-shadow,color] duration-200 ${on ? 'bg-rose text-white shadow-[0_0_34px_-4px_rgba(200,98,114,0.8)]' : 'paper text-paper-ink/80'} ${i === 1 ? 'h-[122px]' : 'h-[108px]'}`}
                 style={{ rotate: [-2, 0.8, 1.6][i] }} animate={{ y: busy ? -7 : 0, scale: busy || on ? 1.04 : 1 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
-                {busy && <span className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-fire/60" />}
+                {busy && <span className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-rose/70" />}
                 <SlipArt place={i} />
                 <span className="mt-1.5 flex h-[24px] items-center">{on ? <span className="caps text-[11px] text-white">Ready</span> : <Dots />}</span>
               </motion.div>

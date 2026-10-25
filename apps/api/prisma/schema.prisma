@@ -15,7 +15,7 @@ model Config {
   updatedAt DateTime @updatedAt
 }
 
-/// One row per moment worth counting (a note written, a note sent, an answer ticked), for Insights.
+/// One row per moment worth counting (a note written, a note sent, a note opened), for Insights.
 model Event {
   id     BigInt   @id @default(autoincrement())
   name   String
@@ -53,7 +53,7 @@ model Notebook {
   @@index([createdAt])
 }
 
-/// One note: "Dear ___, I think you ___. Could this be love?", what Peruzzi made of it, and the answer.
+/// One note: "Dear ___, you ___.", what Peruzzi made of it, and whether the person it's for has opened it.
 model Note {
   id         String    @id @default(cuid())
   /// the number on the paper: "Note 0042"
@@ -70,7 +70,7 @@ model Note {
   thing      Boolean   @default(false)
   /// the note as Peruzzi titles it, like a track ("Last Puff-Puff")
   title      String
-  /// as written ("Dear my crush, I think you …. Could this be love?"), after numbers and handles were taken out;
+  /// as written ("Dear my crush, you …."), after numbers and handles were taken out;
   /// wiped after the retention setting
   statement  String
   /// asked | serious
@@ -79,11 +79,6 @@ model Note {
   kind       String?
   /// what they did, as Peruzzi tells it to them: "You guarded the last puff-puff for me like it was your WAEC result."
   line       String?
-  /// the third box: the excuse they'd give ("I was full.")
-  escape     String?
-  /// yes | no | escape, ticked by the person asked
-  answer     String?
-  answeredAt DateTime?
   /// when the person asked first opened it
   seenAt     DateTime?
   /// a prepared line stood in for the AI
@@ -91,9 +86,8 @@ model Note {
   /// what the admin should know: serious, redacted, refusal, error, injection, slow, ceiling
   flags      String[]
   hidden     Boolean   @default(false)
-  /// the note as the phone drew it, for link previews; and the same note ticked, once it's answered
+  /// the note as the phone drew it, for link previews
   card       Bytes?
-  answerCard Bytes?
   model      String?
   tokensIn   Int       @default(0)
   tokensOut  Int       @default(0)
@@ -107,7 +101,6 @@ model Note {
 
   @@index([createdAt])
   @@index([kind])
-  @@index([answer])
 }
 
 /// Anyone who gave an email: to get their tracklist, to send a note, or to hear from Peruzzi.
@@ -142,10 +135,10 @@ model EmailCode {
 }
 
 /// A note sent to the person it's for: a link the writer shares themselves, or an email the site sends for a writer
-/// who proved their address. Its code is the key to answering.
+/// who proved their address. Its code is the key to opening it.
 model Ask {
   id             String    @id @default(cuid())
-  /// the link to answer it: /a/:code
+  /// the link to open it: /a/:code
   code           String    @unique
   noteId         String
   note           Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
@@ -162,7 +155,6 @@ model Ask {
   /// sent | failed | link
   status         String
   openedAt       DateTime?
-  answeredAt     DateTime?
   /// when the person asked wrote a note back, and the notebook it's in
   backAt         DateTime?
   backNotebookId String?

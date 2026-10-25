@@ -11,9 +11,6 @@ export const FIXED_LINES: Record<string, string> = {
   open: 'Make some noise! Who’s on your mind tonight?',
   found: 'Somebody here has a question for you.',
   question: 'Could this be love?',
-  yes: 'I knew it.',
-  no: 'Respect.',
-  escape: 'Hmm. I don’t believe you.',
 };
 
 /** Text to speech through ElevenLabs. It only ever reads Peruzzi's own words: the fixed lines, and what he wrote after

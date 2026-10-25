@@ -24,8 +24,8 @@ type BtnKind = 'primary' | 'ghost' | 'quiet' | 'paper';
 export function Button({ kind = 'primary', className = '', children, ...p }: { kind?: BtnKind } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   const base = 'relative inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-6 text-[17px] transition-[transform,opacity,background-color,filter] duration-150 active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100 aria-disabled:opacity-40';
   const k = {
-    primary: 'fire text-white font-semibold shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)] hover:brightness-110',
-    ghost: 'border border-bone/35 text-bone hover:border-bone/70 hover:bg-bone/5',
+    primary: 'bg-rose text-white font-semibold hover:bg-rose-deep',
+    ghost: 'border border-bone/30 text-bone hover:border-blush/60',
     quiet: 'text-bone/80 underline decoration-bone/30 underline-offset-4 min-h-11 rounded-none px-2 hover:text-bone',
     paper: 'bg-paper-ink text-paper font-semibold',
   }[kind];
@@ -35,7 +35,7 @@ export function Button({ kind = 'primary', className = '', children, ...p }: { k
 export function Chip({ on, children, className = '', ...p }: { on?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button type="button" aria-pressed={on} {...p}
-      className={`min-h-10 rounded-full border px-4 text-[15px] leading-tight transition-colors duration-150 ${on ? 'fire border-transparent text-white' : 'border-bone/25 bg-bone/[0.03] text-bone/90 hover:border-bone/50'} ${className}`}>
+      className={`min-h-10 rounded-full border px-4 text-[15px] leading-tight transition-colors duration-150 ${on ? 'border-rose bg-rose text-white' : 'border-bone/25 bg-stone text-bone/90 hover:border-blush/50'} ${className}`}>
       {children}
     </button>
   );

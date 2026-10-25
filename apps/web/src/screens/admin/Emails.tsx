@@ -4,7 +4,6 @@ import { Field, inputCls, SaveBar, Section, Text } from './kit';
 
 const KINDS: [string, string, string][] = [
   ['ask', 'The note', 'To the person a note is for, when the writer has it emailed. {sender} {recipient} {senderMask} {site} {artist} {song}'],
-  ['answered', 'They answered', 'To the writer of an emailed note, once it’s ticked. {sender} {recipient} {site} {artist} {song}'],
   ['tracklist', 'The tracklist', 'To the writer, when they ask for their tracklist. {name} {site} {artist} {song}'],
   ['code', 'Confirmation code', 'Sent before anyone can email a note, to prove the address. {code} {site}'],
 ];

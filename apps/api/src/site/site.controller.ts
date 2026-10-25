@@ -25,11 +25,8 @@ export class SiteController {
   async site() {
     const [site, from] = await Promise.all([this.cfg.site(), this.cfg.countFrom()]);
     const since = from ? { gte: from } : undefined;
-    const [asked, answered] = await Promise.all([
-      this.prisma.note.count({ where: { status: 'asked', ...(since ? { createdAt: since } : {}) } }),
-      this.prisma.note.count({ where: { answer: { not: null }, ...(since ? { createdAt: since } : {}) } }),
-    ]);
+    const asked = await this.prisma.note.count({ where: { status: 'asked', ...(since ? { createdAt: since } : {}) } });
     const { countFrom: _c, ...pub } = site;
-    return { ...pub, stats: { asked, answered } };
+    return { ...pub, stats: { asked } };
   }
 }

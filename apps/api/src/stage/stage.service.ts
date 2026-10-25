@@ -16,19 +16,17 @@ export class TooMany extends HttpException { constructor(message: string, public
 
 /** What the writer says: "Dear <who>, you <what>." */
 export interface WriteDto { who: string; what: string; name?: string }
-export type Answer = 'yes' | 'no' | 'escape';
-export const ANSWERS: Answer[] = ['yes', 'no', 'escape'];
 /** Every column but the card images (JPEGs of up to 3 MB): only the endpoints that serve a card read them. */
 export const NOTE_COLUMNS = {
   id: true, seq: true, code: true, notebookId: true, n: true, dear: true, thing: true, title: true, statement: true, status: true, kind: true,
-  line: true, escape: true, answer: true, answeredAt: true, seenAt: true, fallback: true, flags: true, hidden: true,
+  line: true, seenAt: true, fallback: true, flags: true, hidden: true,
   model: true, tokensIn: true, tokensOut: true, cacheRead: true, cacheWrite: true, ms: true, createdAt: true, askedAt: true,
 } as const satisfies Prisma.NoteSelect;
 export const NOTEBOOK_COLUMNS = { id: true, code: true, token: true, device: true, ip: true, name: true, city: true, backOf: true, tracklistAt: true, createdAt: true } as const satisfies Prisma.NotebookSelect;
 type NotebookRow = Omit<Notebook, 'card'>;
-type NoteRow = Omit<Note, 'card' | 'answerCard'>;
+type NoteRow = Omit<Note, 'card'>;
 /** what an ask says about the note it carries */
-const ASKED_NOTE = { select: { dear: true, line: true, answer: true, escape: true } } as const;
+const ASKED_NOTE = { select: { dear: true, line: true } } as const;
 /** The most notes a tracklist's page lists (its newest); its count says how many it holds in all. */
 const TRACKLIST_SHOWN = 30;
 /** How long the stage waits for Peruzzi's reading before a prepared one stands in. */
@@ -50,19 +48,19 @@ class LastHour {
   take(ceiling: number, now = Date.now()) { if (this.count(now) >= ceiling) return false; this.times.push(now); return true; }
 }
 
-/** A note as the phone that wrote it sees it: what Peruzzi made of it, and how far it's got (sent, seen, answered). */
-export function noteView(k: NoteRow & { _count?: { asks: number } }) {
+/** A note as the phone that wrote it sees it: what Peruzzi made of it, and how far it's got (sent, seen, written
+ *  back to). */
+export function noteView(k: NoteRow & { asks?: { backAt: Date | null }[] }) {
   return {
     id: k.id, code: k.code, noteNo: noteNo(k.seq), n: k.n, dear: k.dear, thing: k.thing, title: k.title, status: k.status,
-    kind: k.kind, line: k.line, escape: k.escape,
-    answer: k.answer, answeredAt: k.answeredAt, seenAt: k.seenAt, sent: (k._count?.asks ?? 0) > 0, createdAt: k.createdAt,
+    kind: k.kind, line: k.line, seenAt: k.seenAt, sent: (k.asks?.length ?? 0) > 0, wroteBack: !!k.asks?.some((a) => a.backAt), createdAt: k.createdAt,
   };
 }
 /** A note as anyone with its link sees it: the line as Peruzzi told it, never what was typed. */
 export function publicNote(k: NoteRow, writer?: { name: string | null; city: string | null } | null) {
   return {
     code: k.code, noteNo: noteNo(k.seq), dear: k.dear, thing: k.thing, title: k.title, kind: k.kind,
-    line: k.line || '', escape: k.escape || '', answer: k.answer, answeredAt: k.answeredAt,
+    line: k.line || '',
     writer: writer?.name ?? null, city: writer?.city ?? null, date: k.askedAt || k.createdAt,
   };
 }
@@ -135,11 +133,11 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   private checkOpen(c: StageConfig) { if (!c.open) throw new ForbiddenException({ message: c.pausedMessage, reason: 'paused' }); }
 
   // ---- notebooks ------------------------------------------------------------------------------------------------
-  /** What a notebook that writes back knows of the note it answers: who sent it, to whom, what it said, the answer. */
+  /** What a notebook that writes back knows of the note it answers: who sent it, to whom, and what it said. */
   private async backInfo(askId: string | null) {
     if (!askId) return null;
     const a = await this.prisma.ask.findUnique({ where: { id: askId }, include: { note: ASKED_NOTE } });
-    return a ? { sender: a.senderName, dear: a.note.dear, line: a.note.line || '', answer: a.note.answer === 'escape' ? a.note.escape : a.note.answer } : null;
+    return a ? { sender: a.senderName, dear: a.note.dear, line: a.note.line || '' } : null;
   }
 
   async openNotebook(device: string, ip: string | null, back?: string) {
@@ -162,7 +160,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   /** The notebook as the phone shows it: every note so far, each with where it's got to. */
   async getNotebook(id: string, token: string) {
     const d = await this.notebookFor(id, token); const c = await this.cfg.stage();
-    const notes = await this.prisma.note.findMany({ where: { notebookId: d.id }, orderBy: { n: 'asc' }, select: { ...NOTE_COLUMNS, _count: { select: { asks: true } } } });
+    const notes = await this.prisma.note.findMany({ where: { notebookId: d.id }, orderBy: { n: 'asc' }, select: { ...NOTE_COLUMNS, asks: { select: { backAt: true } } } });
     return { id: d.id, code: d.code, name: d.name, city: d.city, left: await this.leftToday(c, d.device), back: await this.backInfo(d.backOf), notes: notes.map(noteView) };
   }
 
@@ -280,7 +278,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
           dear: (!serious && v.dear) || w.who.text, thing: !serious && v.thing, title: serious ? 'Referred for help' : v.title,
           status: serious ? 'serious' : 'asked', fallback: !ai, model: ai?.model || peruzziModel(),
           tokensIn: ai?.usage.in || 0, tokensOut: ai?.usage.out || 0, cacheRead: ai?.usage.cacheRead || 0, cacheWrite: ai?.usage.cacheWrite || 0, ms: ai?.ms || 0,
-          ...(serious ? {} : { kind: v.kind, line: v.line, escape: v.escape, askedAt: new Date() }),
+          ...(serious ? {} : { kind: v.kind, line: v.line, askedAt: new Date() }),
         },
       });
       this.events.add('note_written', d.device, { back: !!d.backOf, drafted });
@@ -294,7 +292,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   }
 
   // ---- public pages ---------------------------------------------------------------------------------------------
-  /** A note as its public link shows it (someone posted it): Peruzzi's words, the tidied line, and the answer. */
+  /** A note as its public link shows it (someone posted it): what they did, as Peruzzi told it. */
   async publicNote(code: string) {
     const k = await this.prisma.note.findUnique({ where: { code }, select: { ...NOTE_COLUMNS, notebook: { select: { name: true, city: true } } } });
     if (!k || k.hidden || k.status !== 'asked') throw new NotFoundException();
@@ -311,25 +309,18 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   }
 
   // ---- the cards, kept for link previews --------------------------------------------------------------------------
-  /** The note's card (from the phone that wrote it), the tracklist's (likewise), or the note ticked (from the phone
-   *  that answered it, which holds the ask's code instead of the notebook's token). */
-  async saveCard(kind: 'note' | 'answer' | 'notebook', id: string, token: string, image: Buffer) {
+  /** The note's card, or the tracklist's, from the phone that wrote it (its notebook's token is the key). */
+  async saveCard(kind: 'note' | 'notebook', id: string, token: string, image: Buffer) {
     if (kind === 'notebook') { const d = await this.notebookFor(id, token); await this.prisma.notebook.update({ where: { id: d.id }, data: { card: image }, select: { id: true } }); return { ok: true }; }
-    if (kind === 'answer') {
-      // `id` is the ask's code: the link itself is the key, as it is for answering
-      const a = await this.prisma.ask.findUnique({ where: { code: id }, select: { noteId: true, note: { select: { answer: true } } } });
-      if (!a || !a.note.answer) throw new NotFoundException();
-      await this.prisma.note.update({ where: { id: a.noteId }, data: { answerCard: image }, select: { id: true } }); return { ok: true };
-    }
     const k = await this.prisma.note.findUnique({ where: { id }, select: { id: true, notebook: { select: { token: true } } } });
     if (!k || k.notebook.token !== token) throw new NotFoundException();
     await this.prisma.note.update({ where: { id: k.id }, data: { card: image }, select: { id: true } }); return { ok: true };
   }
-  /** The picture for a note's link: ticked once it's answered (if the answering phone sent it), else as asked. */
+  /** The picture for a note's link, or a tracklist's. */
   async cardImage(kind: 'note' | 'notebook', code: string): Promise<Buffer | null> {
     if (kind === 'notebook') { const d = await this.prisma.notebook.findUnique({ where: { code }, select: { card: true } }); return d?.card ? Buffer.from(d.card) : null; }
-    const k = await this.prisma.note.findUnique({ where: { code }, select: { card: true, answerCard: true, hidden: true } });
+    const k = await this.prisma.note.findUnique({ where: { code }, select: { card: true, hidden: true } });
     if (!k || k.hidden) return null;
-    const img = k.answerCard || k.card; return img ? Buffer.from(img) : null;
+    return k.card ? Buffer.from(k.card) : null;
   }
 }

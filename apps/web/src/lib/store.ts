@@ -24,6 +24,6 @@ export const store = {
   /** past tracklists on this phone, newest first */
   tracklists: () => json<{ code: string; at: number; title: string }[]>('pa.tracklists') || [],
   addTracklist: (r: { code: string; title: string }) => set('pa.tracklists', JSON.stringify([{ ...r, at: Date.now() }, ...(json<any[]>('pa.tracklists') || []).filter((x) => x.code !== r.code)].slice(0, 12))),
-  /** the notes this phone answered, by the ask's code, so coming back shows the answer rather than the boxes */
-  answered: () => json<Record<string, string>>('pa.answered') || {}, setAnswered: (code: string, a: string) => set('pa.answered', JSON.stringify({ ...(json<Record<string, string>>('pa.answered') || {}), [code]: a })),
+  /** the notes this phone has opened, by the ask's code, so coming back shows the note at once */
+  opened: () => json<Record<string, number>>('pa.opened') || {}, setOpened: (code: string) => set('pa.opened', JSON.stringify({ ...(json<Record<string, number>>('pa.opened') || {}), [code]: Date.now() })),
 };

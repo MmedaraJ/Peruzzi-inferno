@@ -3,7 +3,8 @@ import { motion, useReducedMotion } from 'framer-motion';
 
 /** The crowd: two rows of people seen from behind, against the lit stage, the way you'd see them from the back of the
  *  room. Heads, shoulders, arms, a few phones up, all leaning one way and then the other with the song's beat (the
- *  stage sets how far: see useBeat). They react to each note when the stage says they do. */
+ *  stage sets how far: see useBeat), outlined in whatever colour the lights are (`--rim`, from the rig). They react
+ *  to each note when the stage says they do. */
 export type Reaction = 'none' | 'ooh' | 'gasp' | 'laugh' | 'murmur' | 'aww' | 'cheer';
 export const CROWD_WORDS: Record<Exclude<Reaction, 'none'>, string> = {
   ooh: 'Ooooh.', gasp: 'The crowd gasps.', laugh: 'The crowd laughs.', murmur: 'The crowd murmurs.', aww: 'Awww.', cheer: 'The crowd goes wild.',
@@ -77,21 +78,21 @@ export function Crowd({ reaction, nonce, className = '' }: { reaction: Reaction;
       <defs>
         <radialGradient id="phone-glow"><stop offset="0" stopColor="#fff8f0" stopOpacity="0.95" /><stop offset="0.35" stopColor="#ffe6f0" stopOpacity="0.4" /><stop offset="1" stopColor="#ffe6f0" stopOpacity="0" /></radialGradient>
         {/* silhouettes against the stage: dark, a little of its light on their heads and shoulders */}
-        <linearGradient id="crowd-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2b0a23" /><stop offset="0.4" stopColor="#120410" /><stop offset="1" stopColor="#070106" /></linearGradient>
-        <linearGradient id="crowd-front-2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#3a0e2f" /><stop offset="0.4" stopColor="#1a0616" /><stop offset="1" stopColor="#0b0209" /></linearGradient>
-        <linearGradient id="crowd-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#4d1440" /><stop offset="0.45" stopColor="#260a21" /><stop offset="1" stopColor="#170513" /></linearGradient>
+        <linearGradient id="crowd-front" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#2c1720" /><stop offset="0.4" stopColor="#140a0e" /><stop offset="1" stopColor="#080405" /></linearGradient>
+        <linearGradient id="crowd-front-2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#38202a" /><stop offset="0.4" stopColor="#1b0f14" /><stop offset="1" stopColor="#0b0608" /></linearGradient>
+        <linearGradient id="crowd-back" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#47293a" /><stop offset="0.45" stopColor="#25141c" /><stop offset="1" stopColor="#170c11" /></linearGradient>
       </defs>
       {PEOPLE.map((p, i) => {
         const sides: (1 | -1)[] = p.arms === 'both' ? [-1, 1] : p.arms === 'left' ? [-1] : p.arms === 'right' ? [1] : [];
         const spread = p.arms === 'both' ? 4 : 0;
         // neighbours in slightly different shades, and each outlined in the stage's light, so no two run together
         const fill = `url(#${p.back ? 'crowd-back' : i % 2 ? 'crowd-front-2' : 'crowd-front'})`;
-        const rim = { stroke: p.back ? 'rgba(255,120,190,0.2)' : 'rgba(255,150,110,0.32)', strokeWidth: p.back ? 1.4 : 1.1 };
+        const rim = { style: { stroke: 'var(--rim, rgb(255 92 134))', strokeOpacity: p.back ? 0.24 : 0.42 }, strokeWidth: p.back ? 1.4 : 1.1 };
         return (
           <g key={i} transform={`translate(${p.x} ${p.back ? -12 : 2}) scale(${p.s})`}>
             <motion.g key={`${i}-${nonce}`} style={{ transformBox: 'fill-box', transformOrigin: '50% 100%' }} animate={reduce ? undefined : MOVES[reaction](i)}>
               <g data-person style={groove(p)}>
-                {sides.map((side) => <path key={side} d={arm(side, spread)} fill="none" stroke={rim.stroke} strokeWidth={10 + rim.strokeWidth * 2} strokeLinecap="round" />)}
+                {sides.map((side) => <path key={side} d={arm(side, spread)} fill="none" style={rim.style} strokeWidth={10 + rim.strokeWidth * 2} strokeLinecap="round" />)}
                 {sides.map((side) => <path key={`a${side}`} d={arm(side, spread)} fill="none" stroke={fill} strokeWidth={10} strokeLinecap="round" />)}
                 {sides.map((side) => { const h = hand(side, spread); return <ellipse key={`h${side}`} cx={h.x} cy={h.y} rx={5.2} ry={6} fill={fill} {...rim} />; })}
                 <path d={BODY} fill={fill} {...rim} />

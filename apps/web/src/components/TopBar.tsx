@@ -28,8 +28,9 @@ export function useSoundOn() {
   return on;
 }
 
-/** When the song should be playing and isn't: back from another app on a phone that wants a tap first, or back from
- *  streaming it, where the song waits to be asked so it doesn't cut into the song playing elsewhere. */
+/** When the song should be playing and isn't: a phone that wants a tap before it plays anything (the site just
+ *  opened, or back from another app), a song stopped or stuck, or back from streaming it, where the song waits to be
+ *  asked so it doesn't cut into the song playing elsewhere. */
 export function MusicPill() {
   const [s, setS] = useState({ tap: sound.needsTap, held: sound.held });
   useEffect(() => sound.subscribe(() => setS({ tap: sound.needsTap, held: sound.held })), []);
@@ -42,7 +43,7 @@ export function MusicPill() {
         <motion.button key="pill" onClick={() => { sound.resume(); track('music_back', { held: s.held }); }}
           className="fixed left-1/2 top-[calc(env(safe-area-inset-top,0px)+58px)] z-[55] flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full bg-bone px-4 py-2 text-[14.5px] font-medium text-ink shadow-[0_10px_30px_-8px_rgba(0,0,0,0.8)]"
           initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }}>
-          <MusicNotesIcon size={17} weight="bold" /> {s.held ? 'Bring the music back' : 'Tap for the music'}
+          <MusicNotesIcon size={17} weight="bold" /> {s.held ? 'Bring the music back' : 'Tap to play the music'}
         </motion.button>
       )}
     </AnimatePresence>

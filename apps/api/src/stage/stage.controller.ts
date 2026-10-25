@@ -42,9 +42,8 @@ export class StageController {
     if (b?.channel === 'email') return this.asks.email(id, str(b?.token) || '', { contactToken: str(b?.contactToken, 200) || '', senderName: str(b?.senderName, 40), recipientEmail: str(b?.recipientEmail, 160) || '', recipientName: str(b?.recipientName, 40) });
     return this.asks.link(id, str(b?.token) || '', str(b?.senderName, 40), str(b?.recipientName, 40));
   }
-  // the person asked: the note, and their tick
+  // the person asked: the note, opened
   @Get('asks/:code') forAsk(@Param('code') code: string) { return this.asks.forAsk(code); }
-  @Post('asks/:code/answer') answer(@Param('code') code: string, @Body() b: any) { return this.asks.answer(code, str(b?.answer, 12) || '', str(b?.device, 64)); }
 
   // the public pages behind the shared links
   @Get('n/:code') note(@Param('code') code: string) { return this.stage.publicNote(code); }
@@ -55,7 +54,7 @@ export class StageController {
   card(@Param('kind') kind: string, @Param('id') id: string, @Req() req: Request) {
     const body = req.body as Buffer;
     if (!Buffer.isBuffer(body) || body.length < 1000 || body.length > 3_000_000 || body[0] !== 0xff || body[1] !== 0xd8) throw new HttpException('jpeg only', 400);
-    const k = kind === 'notebook' ? 'notebook' : kind === 'answer' ? 'answer' : 'note';
+    const k = kind === 'notebook' ? 'notebook' : 'note';
     return this.stage.saveCard(k, id, String(req.headers['x-token'] || ''), body);
   }
   @Get('cards/:kind/:code.jpg')

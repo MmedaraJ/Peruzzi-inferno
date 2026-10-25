@@ -10,12 +10,16 @@ import { isField, touch } from './viewport';
  *  default) and drops to the duck level whenever anything else plays. The effects are synthesised here (no files to load), apart from the
  *  crowd's voices, which the server makes with ElevenLabs (or the admin uploads) and serves from /api/sfx/.
  *
+ *  The song starts the moment the stage opens wherever the browser allows it. Most phones only allow sound after a tap
+ *  on the page, so when it's refused, a pill asks for one ("Tap to play the music"), and the next tap anywhere starts
+ *  it. The same pill comes back whenever the song should be playing and isn't: stopped by something other than the
+ *  fan (a call, the phone's media controls, headphones pulled out), or stuck waiting on the network.
+ *
  *  Leaving the page cuts the sound at once (an iPhone takes focus away before it hides the page, so the cut comes on
- *  the blur), and coming back carries the song on where it was. If the phone won't start it by itself, the next tap
- *  does, and a pill asks for that tap. After the fan goes off to stream the song, it waits for the pill instead, so it
- *  never cuts into the song playing in another app. */
+ *  the blur), and coming back carries the song on where it was. After the fan goes off to stream the song, it waits
+ *  for the pill instead, so it never cuts into the song playing in another app. */
 
-export type Sfx = 'mic' | 'crash' | 'tick' | 'drumroll' | 'whoosh' | 'murmur' | 'paper' | 'chime';
+export type Sfx = 'mic' | 'crash' | 'drumroll' | 'whoosh' | 'murmur' | 'paper' | 'chime';
 export type CrowdSound = 'ooh' | 'gasp' | 'laugh' | 'murmur' | 'aww' | 'cheer';
 
 export const SONG = '/media/audio/inferno.mp3';
@@ -44,7 +48,9 @@ class Sound {
   /** the song was left paused on purpose, while the fan streams the album elsewhere: it waits for the pill */
   held = false;
   private gone = false; private keepUntil = 0; private holdOnReturn = false; private fieldLeft = 0;
-  private tapArmed = false; private firstArmed = false; private checkTimer = 0;
+  private tapArmed = false; private checkTimer = 0;
+  /** the watch on the song: where it was last, and when it last moved */
+  private watchTimer = 0; private lastT = -1; private lastMoved = 0;
   level = 0.25; duck = 0.1;
   on = true;
   private listeners = new Set<() => void>();
@@ -72,7 +78,9 @@ class Sound {
         this.routed = fixedVolume();
         if (this.routed) { el.crossOrigin = 'anonymous'; this.musicGain = ctx.createGain(); this.musicGain.gain.value = 0; this.musicGain.connect(this.master); ctx.createMediaElementSource(el).connect(this.musicGain); }
         else el.volume = 0;
-        el.addEventListener('playing', () => { if (this.needsTap) { this.needsTap = false; this.emit(); } });
+        el.addEventListener('playing', () => { this.lastMoved = performance.now(); if (this.needsTap) { this.needsTap = false; this.emit(); } });
+        // stopped by something else (a call, the phone's media controls, headphones pulled out): ask for the tap
+        el.addEventListener('pause', () => this.checkSoon());
         this.musicEl = el;
         const v = new Audio(); v.preload = 'auto'; v.crossOrigin = 'anonymous'; (v as any).playsInline = true; ctx.createMediaElementSource(v).connect(this.voiceGain); this.voiceEl = v;
         try { const s = (navigator as any).audioSession; if (s) s.type = 'playback'; } catch {}   // so the ringer switch doesn't silence it
@@ -106,7 +114,8 @@ class Sound {
     for (const g of [this.master.gain, this.musicGain?.gain]) if (g) { g.cancelScheduledValues(t); g.setValueAtTime(0, t); g.value = 0; }
     if (!this.routed && this.musicEl) { window.clearInterval(this.volTimer); try { this.musicEl.volume = 0; } catch {} }
     this.musicEl?.pause(); this.stopVoice();
-    window.clearTimeout(this.checkTimer);
+    // the watch starts afresh on the way back, rather than calling the song stuck for the time it was away
+    window.clearTimeout(this.checkTimer); this.lastT = -1;
     window.setTimeout(() => { if (this.gone) ctx.suspend().catch(() => {}); }, 80);
   }
   /** Back: the room wakes and the song carries on where it was, faded up. */
@@ -129,11 +138,30 @@ class Sound {
   /** Still silent a moment later: ask for the tap in plain sight. */
   private checkSoon() {
     window.clearTimeout(this.checkTimer);
-    this.checkTimer = window.setTimeout(() => { const s = this.silent(); if (s !== this.needsTap) { this.needsTap = s; this.emit(); } }, 1200);
+    this.checkTimer = window.setTimeout(() => this.ask(this.silent()), 1200);
   }
+  /** the pill, up or down */
+  private ask(tap: boolean) {
+    if (tap) this.armTap();
+    if (tap !== this.needsTap) { this.needsTap = tap; this.emit(); }
+  }
+  /** The song should be playing, and can't be heard: paused, its sound asleep, or stuck where it is for 4 seconds. */
   private silent() {
-    return !this.gone && document.visibilityState === 'visible' && this.wantMusic && this.on && !this.held
-      && (!this.musicEl || this.musicEl.paused || (this.routed && this.ctx?.state !== 'running'));
+    if (this.gone || document.visibilityState !== 'visible' || !this.wantMusic || !this.on || this.held) return false;
+    const el = this.musicEl;
+    return !el || el.paused || (this.routed && this.ctx?.state !== 'running') || (this.lastT >= 0 && performance.now() - this.lastMoved > 4000);
+  }
+  /** Keeps an eye on the song, every second, while it should be playing: when it can't be heard, the pill asks for the
+   *  tap (and a song stuck on the network gets a nudge). */
+  private watch() {
+    if (this.watchTimer) return;
+    this.watchTimer = window.setInterval(() => {
+      const el = this.musicEl;
+      if (!el || el.paused) { this.lastT = -1; } else if (el.currentTime !== this.lastT) { this.lastT = el.currentTime; this.lastMoved = performance.now(); }
+      const quiet = this.silent();
+      if (quiet && el && !el.paused) el.play().catch(() => {});
+      this.ask(quiet);
+    }, 1000);
   }
   /** Waits for the next tap anywhere (the moment a phone allows sound again), and keeps waiting until it really plays. */
   private armTap() {
@@ -141,6 +169,7 @@ class Sound {
     const off = () => { TAPS.forEach((e) => window.removeEventListener(e, go, true)); this.tapArmed = false; };
     const go = (e: Event) => {
       if (leavesPage(e) || this.gone) return;
+      this.unlock();
       const ctx = this.ctx; const el = this.musicEl; const want = this.wantMusic && this.on && !this.held;
       Promise.all([ctx?.resume(), want && el?.paused ? el.play() : null]).then(() => {
         if (ctx?.state !== 'running' || (want && el?.paused)) return;
@@ -158,22 +187,23 @@ class Sound {
   /** The pill: the song again, from where it was. Call inside the tap. */
   resume() {
     this.held = false; this.needsTap = false; this.gone = false; this.unlock();
-    if (this.wantMusic && this.on) this.musicEl?.play().catch(() => {});
+    const el = this.musicEl;
+    if (el && this.wantMusic && this.on) {
+      // stuck on the network: loaded again, from where it got to
+      if (!el.paused && this.lastT >= 0 && performance.now() - this.lastMoved > 4000) { const t = el.currentTime; el.load(); try { el.currentTime = t; } catch {} this.lastMoved = performance.now(); }
+      el.play().catch(() => {});
+    }
     this.applyMusic(0.8); this.emit(); this.checkSoon();
   }
-  /** The song belongs on every screen of the stage. It plays now when the sound is awake already; otherwise (a link, a
-   *  reload) it starts with the first tap anywhere, or, with the sound off, the moment the sound is turned back on. */
+  /** The song belongs on every screen of the stage, from the moment it opens: it starts now if the browser allows it,
+   *  and if it doesn't, the pill asks for the tap that does (any tap anywhere starts it). With the sound off, it starts
+   *  the moment the sound is turned back on. */
   playOnStage() {
-    if (this.unlocked) { if (!this.wantMusic) this.startMusic(); return; }
+    this.watch();
     if (this.wantMusic) return;
     this.wantMusic = true;
-    if (this.firstArmed) return; this.firstArmed = true;
-    const go = (e: Event) => {
-      if (leavesPage(e)) return;
-      TAPS.forEach((ev) => window.removeEventListener(ev, go, true)); this.firstArmed = false;
-      if (this.on) { this.unlock(); this.startMusic(); }
-    };
-    TAPS.forEach((e) => window.addEventListener(e, go, true));
+    if (!this.on) return;
+    this.unlock(); this.startMusic();
   }
 
   setLevels(level: number, duck: number) { this.level = level; this.duck = Math.min(level, duck); this.applyMusic(0.3); }
@@ -189,10 +219,10 @@ class Sound {
     else if (!on) window.setTimeout(() => { if (!this.on) this.musicEl?.pause(); }, 300);
   }
 
-  /** The song, from the top or where it left off, faded in to its level. */
+  /** The song, from the top or where it left off, faded in to its level. Refused (no tap yet), the pill asks for one. */
   startMusic() {
-    this.wantMusic = true; this.held = false; if (!this.ctx || !this.musicEl) return;
-    if (this.on) this.musicEl.play().then(() => this.emit(), () => { this.armTap(); this.checkSoon(); });
+    this.wantMusic = true; this.held = false; this.watch(); if (!this.ctx || !this.musicEl) return;
+    if (this.on) this.musicEl.play().then(() => { this.emit(); this.checkSoon(); }, (e) => { if (e?.name === 'NotAllowedError') this.ask(true); else { this.armTap(); this.checkSoon(); } });
     this.applyMusic(1.6);
   }
   stopMusic(fade = 0.8) {
@@ -248,7 +278,6 @@ class Sound {
     switch (name) {
       case 'mic': dur = this.mic(t, s); break;
       case 'crash': dur = this.crash(t, s); break;
-      case 'tick': dur = this.tick(t); break;
       case 'drumroll': dur = this.drumroll(t, opts.duration ?? 2.6); break;
       case 'whoosh': dur = this.whoosh(t, opts.duration ?? 0.7); break;
       case 'murmur': dur = this.murmur(t, opts.duration ?? 2.4, 0.55 * s); break;
@@ -319,12 +348,6 @@ class Sound {
     this.osc('sine', 110, 70, t, 0.2, 0.4, this.env(t, 0.4 * s, 0.002, 0.3, this.sfxBus, 0.3));
     return 1.8;
   }
-  /** A biro ticking a box: two quick strokes on paper, the second longer. */
-  private tick(t: number) {
-    this.burst(t, 0.05, 'bandpass', 3100, 1.6, this.env(t, 0.16, 0.006, 0.045, this.sfxBus));
-    this.burst(t + 0.07, 0.13, 'bandpass', 2600, 1.4, this.env(t + 0.07, 0.2, 0.01, 0.12, this.sfxBus));
-    return 0.25;
-  }
   /** A snare roll that builds, while Peruzzi reads. */
   private drumroll(t: number, dur: number) {
     const rate = 26; const n = Math.floor(dur * rate);
@@ -353,7 +376,7 @@ class Sound {
     }
     return dur;
   }
-  /** A soft bell, for a yes. */
+  /** A soft bell, for a sweet note. */
   private chime(t: number) {
     [[659.3, 0], [987.8, 0.09], [1318.5, 0.18]].forEach(([f, d]) => this.osc('sine', f, f, t + d, 0, 1.6, this.env(t + d, 0.09, 0.006, 1.4, this.sfxBus, 0.6)));
     return 1.8;

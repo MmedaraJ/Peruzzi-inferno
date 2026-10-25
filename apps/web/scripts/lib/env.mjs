@@ -12,7 +12,9 @@ export const H = { 'x-admin-password': PW, 'Content-Type': 'application/json' };
 export const A = process.env.API || 'http://127.0.0.1:4000';
 export const W = process.env.WEB || 'http://127.0.0.1:5173';
 export const SHOTS = process.env.SHOTS || '/tmp/peruzzi-shots'; fs.mkdirSync(SHOTS, { recursive: true });
-export const launch = () => chromium.launch({ executablePath: process.env.CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined), args: ['--autoplay-policy=no-user-gesture-required'] });
+/** A browser that lets the page play sound by itself, or, with `{ autoplay: false }`, one that wants a tap first, as
+ *  phones do. */
+export const launch = ({ autoplay = true } = {}) => chromium.launch({ executablePath: process.env.CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined), args: [`--autoplay-policy=${autoplay ? 'no-user-gesture-required' : 'user-gesture-required'}`] });
 let fails = 0;
 export const check = (name, ok, extra = '') => { console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${extra ? ` (${extra})` : ''}`); if (!ok) fails++; };
 export const done = () => { console.log(fails ? `\n${fails} failed` : '\nall passed'); process.exit(fails ? 1 : 0); };

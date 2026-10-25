@@ -7,6 +7,13 @@ export const BPM = 102.97;
 export const FIRST_BEAT = 0.277;
 const BEAT = 60 / BPM;
 
+/** Where the song is, in beats from its first, and whether that's the song's own time: while it isn't playing, a clock
+ *  at its tempo stands in. */
+export function beatAt() {
+  const t = sound.songTime();
+  return t != null ? { beats: (t - FIRST_BEAT) / BEAT, live: true } : { beats: performance.now() / 1000 / BEAT, live: false };
+}
+
 /** Keeps the room moving to the song: on `ref`'s element, every frame, `--sa` and `--sb` (how far the crowd leans,
  *  one way on a beat and back the other way on the next, the second group a touch behind the first), `--bob` (how
  *  far down they dip, lowest on each beat) and `--pulse` (the lights, brightest on each beat, fading until the next).
@@ -18,8 +25,7 @@ export function useBeat(ref: RefObject<HTMLElement>, still = false) {
     if (!el || still || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     let raf = 0;
     const frame = () => {
-      const t = sound.songTime(); const live = t != null;
-      const beats = live ? (t - FIRST_BEAT) / BEAT : performance.now() / 1000 / BEAT;
+      const { beats, live } = beatAt();
       const amp = live ? 1 : 0.55;
       const lean = (b: number) => Math.cos(Math.PI * b) * 4.5 * amp;
       el.style.setProperty('--sa', `${lean(beats).toFixed(2)}deg`);

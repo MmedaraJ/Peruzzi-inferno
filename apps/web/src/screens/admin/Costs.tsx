@@ -32,7 +32,7 @@ export function Costs({ token, value, voice, onSave }: { token: string; value: a
   const load = () => admin.costs(token).then(setR, (e) => setErr(e.message));
   useEffect(() => { load(); }, []);
   const [d, setD, dirty] = useDraft(value);
-  if (err) return <p className="text-[#f0c4c4]">{err}</p>;
+  if (err) return <p className="text-petal">{err}</p>;
   if (!r) return <p className="text-bone/60">Loading…</p>;
   const naira = (x: number) => (r.rate > 0 ? `≈ ₦${Math.round(x * r.rate).toLocaleString('en-NG')}` : undefined);
   const t = r.totals; const m = r.monthly;

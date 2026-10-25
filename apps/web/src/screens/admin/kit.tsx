@@ -82,7 +82,7 @@ export function SaveBar({ dirty, onSave, onReset, saved }: { dirty: boolean; onS
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | string>('idle');
   const run = async (f: () => Promise<any>, done: string) => { setState('saving'); try { await f(); setState(done); window.setTimeout(() => setState('idle'), 2500); } catch (e: any) { setState(e?.message || 'Couldn’t save.'); } };
   return (
-    <div className="dock-bottom sticky bottom-0 z-20 -mx-4 mt-2 flex items-center gap-3 border-t border-bone/10 bg-[#11100e]/95 px-4 py-3 backdrop-blur [--dock-bg:#11100e]">
+    <div className="dock-bottom sticky bottom-0 z-20 -mx-4 mt-2 flex items-center gap-3 border-t border-bone/10 bg-ink/95 px-4 py-3 backdrop-blur [--dock-bg:#1d1418]">
       <button disabled={!dirty || state === 'saving'} onClick={() => run(onSave, saved || 'Saved. Live within 15 seconds.')} className="min-h-11 bg-bone px-5 font-semibold text-ink disabled:opacity-35">{state === 'saving' ? 'Saving…' : 'Save changes'}</button>
       {onReset && <button onClick={() => { if (confirm('Put every setting on this page back to the default?')) run(onReset, 'Back to the defaults.'); }} className="text-[14px] text-bone/55 underline decoration-bone/25 underline-offset-4">Reset to defaults</button>}
       <span className="text-[14px] text-bone/65">{state !== 'idle' && state !== 'saving' ? state : dirty ? 'Unsaved changes' : ''}</span>

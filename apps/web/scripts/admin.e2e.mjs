@@ -1,6 +1,7 @@
-// The admin: signing in, the insights, the costs (a payment off what's owed, and a month at 10,000 notes), pausing the
-// stage (which reaches the site, while notes already sent can still be answered), and the notes, with hiding one from
-// its public link.
+// The admin: signing in, what's connected (and whether the server knows the site's address), the insights, the costs
+// (a payment off what's owed, and a month at 10,000 notes), pausing the stage (which reaches the site, while notes
+// already sent can still be opened), the emails, and the notes, with hiding one from its public link. Nothing anywhere
+// about answers or boxes to tick: there are none.
 import { A, H, PW, SHOTS, W, check, done, launch } from './lib/env.mjs';
 
 const b = await launch(); const p = await b.newPage({ viewport: { width: 1280, height: 900 } });
@@ -12,10 +13,12 @@ try {
   check('a wrong password is refused', await p.getByText('That password isn’t right.').waitFor({ timeout: 3000 }).then(() => true, () => false));
   await p.fill('input[type=password]', PW); await p.getByRole('button', { name: 'Sign in' }).click();
   await p.getByText('From the stage to sharing').waitFor();
-  check('the insights load: the way from the stage to sharing, the answers, what the notes were about', await p.getByRole('heading', { name: 'The answers' }).isVisible() && await p.getByRole('heading', { name: 'What the notes were about' }).isVisible()
-    && await p.getByText('Peruzzi read it').isVisible());
+  check('the status says whether the server knows the site’s address', await p.getByText(/Addresses: /).isVisible());
+  check('the insights load: the way from the stage to sharing, what the notes were about, opened and written back', await p.getByRole('heading', { name: 'What the notes were about' }).isVisible()
+    && await p.getByText('Peruzzi read it').isVisible() && await p.getByText('Opened by the one asked').isVisible() && await p.getByText('Written back', { exact: true }).isVisible());
+  check('…and no answers: there are none to count', await p.getByRole('heading', { name: 'The answers' }).count() === 0 && await p.getByText(/ticked yes|Answered/).count() === 0);
   const ins = await (await fetch(`${A}/api/admin/insights`, { headers: H })).json();
-  check('…counted from the notes themselves', ins.totals.asked <= ins.totals.notes && ins.totals.yes <= ins.totals.answered && ins.totals.answered <= ins.totals.asked, JSON.stringify({ notes: ins.totals.notes, asked: ins.totals.asked, answered: ins.totals.answered }));
+  check('…counted from the notes themselves', ins.totals.asked <= ins.totals.notes && ins.totals.seen <= ins.totals.asked && !('answered' in ins.totals) && !('answers' in ins), JSON.stringify({ notes: ins.totals.notes, asked: ins.totals.asked, seen: ins.totals.seen }));
   await p.screenshot({ path: `${SHOTS}/admin-insights.png`, fullPage: true });
 
   // the costs: what it has cost, month by month, what keeps it running, and what's still to pay, less what's been paid
@@ -58,23 +61,28 @@ try {
   const asks = await (await fetch(`${A}/api/admin/asks`, { headers: H })).json();
   if (asks.length) {
     await q.goto(`${W}/answer/${asks[0].code}`, { waitUntil: 'networkidle' });
-    check('…while a note already sent can still be opened and answered', await q.getByRole('button', { name: 'Open it' }).or(q.getByText('You answered')).first().waitFor({ timeout: 8000 }).then(() => true, () => false)
+    check('…while a note already sent can still be opened', await q.getByRole('button', { name: 'Open it' }).or(q.locator('canvas[data-paper]')).first().waitFor({ timeout: 8000 }).then(() => true, () => false)
       && !(await q.getByRole('heading', { name: 'between sets' }).count()));
   }
   await q.close();
 
+  // the emails: the note, the tracklist and the code; nothing to tell a writer about an answer
+  await p.getByRole('button', { name: 'Emails', exact: true }).click();
+  check('the emails: the note, the tracklist, the code, and no “they answered”', await p.getByText('Confirmation code').first().waitFor({ timeout: 8000 }).then(() => true, () => false) && await p.getByText('They answered').count() === 0);
+
   // the notes: each one as written, what Peruzzi said, where it went; hiding one takes it off its public link
   await p.getByRole('button', { name: 'Notes', exact: true }).click();
+  check('the notes can be filtered by whether they were opened, not answered', await p.getByRole('button', { name: 'Opened', exact: true }).isVisible() && await p.getByRole('button', { name: 'Answered', exact: true }).count() === 0);
   const row = p.locator('main button').filter({ hasText: 'Dear ' }).first();
   // waits for the list itself: the first open of a page can take a moment while the dev server builds it
   check('the notes load', await row.waitFor({ timeout: 10000 }).then(() => true, () => false));
-  const list = await (await fetch(`${A}/api/admin/notes?filter=answered`, { headers: H })).json();
+  const list = await (await fetch(`${A}/api/admin/notes?filter=seen`, { headers: H })).json();
   const k = list.find((x) => x.status === 'asked' && !x.hidden) || (await (await fetch(`${A}/api/admin/notes`, { headers: H })).json()).find((x) => x.status === 'asked' && !x.hidden);
   if (k) {
     await p.getByPlaceholder('Search titles, who it’s to and what was written').fill(k.dear); await p.getByRole('button', { name: 'Search' }).click();
     await p.locator('main button').filter({ hasText: `Dear ${k.dear} · ${k.title}` }).first().click();
     const sheet = p.getByRole('dialog', { name: 'Note' }); await sheet.waitFor();
-    check('a note opens with what was written and what Peruzzi said', await sheet.getByText('As written').isVisible() && await sheet.getByText('Peruzzi asks: Could this be love?').isVisible());
+    check('a note opens with what was written and what Peruzzi said, with no boxes', await sheet.getByText('As written').isVisible() && await sheet.getByText('Peruzzi asks: Could this be love?').isVisible() && !(await sheet.innerText()).includes('☐'));
     await p.screenshot({ path: `${SHOTS}/admin-note.png` });
     const code = (await (await fetch(`${A}/api/admin/notes/${k.id}`, { headers: H })).json()).code;
     await sheet.getByRole('button', { name: 'Hide from public links' }).click(); await sheet.getByRole('button', { name: 'Show it again' }).waitFor();

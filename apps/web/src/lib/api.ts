@@ -26,7 +26,7 @@ const post = <T>(path: string, body: any) => req<T>(path, { method: 'POST', body
 const put = <T>(path: string, body: any) => req<T>(path, { method: 'PUT', body: JSON.stringify(body) });
 
 // ---- types ---------------------------------------------------------------------------------------------------------
-export interface Site { artist: string; song: string; smartLink: string; handle: string; demoNotice: boolean; demoText: string; credit: boolean; stats: { asked: number; answered: number } }
+export interface Site { artist: string; song: string; smartLink: string; handle: string; demoNotice: boolean; demoText: string; credit: boolean; stats: { asked: number } }
 export interface StageConfig {
   open: boolean; pausedMessage: string; nameplate: string; notesPerDay: number; asksPerDay: number;
   email: boolean; voice: { mode: 'off' | 'mc' | 'artist_lines' | 'artist_ai'; aiLabel: string; v?: string };
@@ -38,30 +38,29 @@ export interface StageConfig {
   /** the crowd's voices the server has, by version ("new": made the first time it's asked for) */
   sfx?: Record<string, string>;
 }
-/** love nearly always; not_love for a complaint dressed as a love note; nonsense when there was nothing to read */
+/** what the note was about, as Peruzzi read it: something sweet, something they shouldn't have, or nothing to read */
 export type NoteKind = 'love' | 'not_love' | 'nonsense';
-/** the three boxes: Yes, No, and the third Peruzzi wrote */
-export type Answer = 'yes' | 'no' | 'escape';
 /** A note as the phone that wrote it sees it. `dear`: who it's to, as the note says it after "Dear" ("Tolu", "Crush");
- *  `thing`: something that can't answer (a bed, jollof); `title`: as Peruzzi titled it, like a track. */
+ *  `thing`: something that can't read it (a bed, jollof); `title`: as Peruzzi titled it, like a track. How far it's
+ *  got: `sent`, `seenAt` (opened by the one it's for), `wroteBack` (they've started a note back). */
 export interface NoteInfo {
   id: string; code: string; noteNo: string; n: number; dear: string; thing: boolean; title: string; status?: string; kind: NoteKind | null;
-  line: string | null; escape: string | null; answer: Answer | null; answeredAt: string | null; seenAt: string | null; sent: boolean; createdAt?: string;
+  line: string | null; seenAt: string | null; sent: boolean; wroteBack: boolean; createdAt?: string;
 }
-/** the note a notebook writes back to: who sent it, to whom, what it said, and how it was answered */
-export interface Back { sender: string; dear: string; line: string; answer: string | null }
+/** the note a notebook writes back to: who sent it, to whom, and what it said */
+export interface Back { sender: string; dear: string; line: string }
 /** The notes written on this phone, as many as they like; the tracklist is made of them. */
 export interface Notebook { id: string; code: string; name: string | null; city: string | null; left: number; back: Back | null; notes: NoteInfo[] }
-/** "Dear <who>, I think you <what>. Could this be love?" */
+/** "Dear <who>, you <what>." */
 export interface Written { who: string; what: string; name?: string }
 /** Peruzzi's reading: the note with his line, or (serious) Peruzzi stepping out of character. `voice`: it can be heard. */
 export interface Asked { note: NoteInfo; serious: boolean; line: string | null; voice: boolean; left: number }
-/** A note as anyone with its link sees it: Peruzzi's words and the tidied line, never what was typed. */
+/** A note as anyone with its link sees it: what they did, as Peruzzi told it, never what was typed. */
 export interface PublicNote {
-  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; line: string; escape: string;
-  answer: Answer | null; answeredAt: string | null; writer: string | null; city: string | null; date: string;
+  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; line: string;
+  writer: string | null; city: string | null; date: string;
 }
-/** The note, for the person it was sent to: who it's from and what it says (and their answer, once given). */
+/** The note, for the person it was sent to: who it's from and what it says. */
 export interface ForAsk { code: string; sender: string; recipient: string | null; note: PublicNote }
 export interface PublicTracklist { code: string; name: string | null; city: string | null; date: string; count: number; notes: PublicNote[] }
 
@@ -77,16 +76,14 @@ export const api = {
   sendLink: (noteId: string, token: string, senderName?: string, recipientName?: string) => post<{ code: string; url: string }>(`/api/notes/${noteId}/send`, { token, channel: 'link', senderName, recipientName }),
   sendEmail: (noteId: string, token: string, b: { contactToken: string; senderName?: string; recipientEmail: string; recipientName?: string }) => post<{ ok: true; left: number }>(`/api/notes/${noteId}/send`, { token, channel: 'email', ...b }),
   forAsk: (code: string) => req<ForAsk>(`/api/asks/${encodeURIComponent(code)}`),
-  answer: (code: string, answer: Answer, device: string) => post<{ note: PublicNote; already: boolean }>(`/api/asks/${encodeURIComponent(code)}/answer`, { answer, device }),
   note: (code: string) => req<PublicNote>(`/api/n/${encodeURIComponent(code)}`),
   tracklist: (code: string) => req<PublicTracklist>(`/api/t/${encodeURIComponent(code)}`),
-  /** a card for link previews: a note as asked, a note ticked (sent by the phone that answered, keyed by the ask's
-   *  code), or a tracklist */
-  saveCard: (kind: 'note' | 'answer' | 'notebook', id: string, token: string, blob: Blob) => req<{ ok: true }>(`/api/cards/${kind}/${encodeURIComponent(id)}`, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg', 'x-token': token } }),
+  /** a card for link previews: a note, or a tracklist */
+  saveCard: (kind: 'note' | 'notebook', id: string, token: string, blob: Blob) => req<{ ok: true }>(`/api/cards/${kind}/${encodeURIComponent(id)}`, { method: 'PUT', body: blob, headers: { 'Content-Type': 'image/jpeg', 'x-token': token } }),
   sendCode: (email: string, device: string) => post<{ ok: true }>('/api/contacts/code', { email, device }),
   verify: (email: string, code: string, device: string, name?: string) => post<{ contactToken: string; email: string }>('/api/contacts/verify', { email, code, device, name }),
   emailTracklist: (notebookId: string, token: string, email: string, marketing: boolean) => post<{ ok: true }>(`/api/notebooks/${notebookId}/email`, { token, email, marketing }),
-  /** Peruzzi's line on a note, read aloud: for the phone that wrote it (`t`, its notebook's token) or the one it was
+  /** a note read aloud (what they did, as Peruzzi told it, and his question): for the phone that wrote it (`t`, its notebook's token) or the one it was
    *  sent to (`a`, the ask's code) */
   voiceUrl: (noteId: string, key: { t?: string; a?: string }) => `/api/voice/note/${noteId}?${key.t ? `t=${encodeURIComponent(key.t)}` : `a=${encodeURIComponent(key.a || '')}`}`,
   /** a fixed line's reading ("Make some noise!"), in the voice the stage has now (v) */

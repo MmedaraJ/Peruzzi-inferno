@@ -28,7 +28,7 @@ export function People({ token }: { token: string }) {
           {s.map((r) => (
             <div key={r.code} className="px-3.5 py-2.5 text-[14.5px]">
               <p className="truncate">{r.senderName} → {r.recipientName || r.recipientMask || r.dear} <span className="text-bone/45">· note {r.noteNo} · {r.title}</span></p>
-              <p className="text-[12.5px] text-bone/45">{[r.channel === 'email' ? `emailed (${r.status})` : 'link', r.openedAt && 'opened', r.answer && `ticked ${r.answer === 'escape' ? 'the third box' : r.answer}`, r.backAt && 'written back', ago(r.createdAt)].filter(Boolean).join(' · ')}</p>
+              <p className="text-[12.5px] text-bone/45">{[r.channel === 'email' ? `emailed (${r.status})` : 'link', r.openedAt && 'opened', r.backAt && 'written back', ago(r.createdAt)].filter(Boolean).join(' · ')}</p>
             </div>
           ))}
           {!s.length && <p className="px-3.5 py-4 text-bone/50">None yet.</p>}

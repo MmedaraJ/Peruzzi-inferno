@@ -42,12 +42,12 @@ const viewOf = (path: string): { view: View | null; id?: string } => {
  *  its own address (so the phone's back button goes where you'd expect), and this one component holds them all, so
  *  the song and the notebook carry on throughout:
  *
- *    /                a note: "Dear ___, I think you ___. Could this be love?", Peruzzi's reading, and the note
+ *    /                a note: "Dear ___, you ___.", Peruzzi's reading, and the note with his question on it
  *                     (?back=<ask> writes back to the one who sent that ask)
  *    /notes           your notes, with where each has got to
  *    /notes/:id       a note already asked, to save, post or send
  *    /tracklist       the tracklist
- *    /answer/:code    a note sent to you: open it, and tick
+ *    /answer/:code    a note sent to you: open it, and write one back
  *
  *  There's no front page: the site opens on a note. Back from a note's page is your notes; back from your notes is a
  *  new note. */
@@ -92,8 +92,9 @@ export default function Asked() {
 
   // the note's fonts and cover, so the paper is drawn the moment it comes
   useEffect(() => { if (status === 'ready') return whenIdle(preloadNote); }, [status]);
-  // the song: from the first tap anywhere (a phone starts sound only from one)
-  useEffect(() => { if (status === 'ready' && view && view !== 'answer') sound.playOnStage(); }, [status, view]);
+  // the song, on every screen, from the moment the stage opens (or the first tap, on a phone that wants one first), and
+  // again with each new note (a note put down for help stops it)
+  useEffect(() => { if (status === 'ready' && view) sound.playOnStage(); }, [status, view, writing?.key]);
 
   // a note belongs to its visit: once its screen is left, coming back to it (forward, a reload) starts a new one
   const lastView = useRef(view);
@@ -153,7 +154,7 @@ export default function Asked() {
     else if (e.status === 403) { setMessage(e.message); setStatus('closed'); }
     else { setMessage(e.message); setStatus('error'); }
   };
-  /** The notebook as the server has it: answers come in while you look. */
+  /** The notebook as the server has it: the notes sent get seen, and written back to, while you look. */
   const refresh = async () => {
     const cur = notebookRef.current; if (!cur) return null;
     const d = await api.notebook(cur.id, token.current).catch(() => null); if (!d) return null;
@@ -173,13 +174,13 @@ export default function Asked() {
   const prepare = (n: NoteInfo, andUpload = true) => {
     const card: Card = { ready: noteCard(cardData(n), 'story').then((cv) => toBlob(cv, 0.9)).then((b) => new File([b], `peruzzi-asks-note-${n.noteNo}.jpg`, { type: 'image/jpeg' })) };
     card.ready.then((f) => { card.file = f; }).catch(() => {});
-    cards.current.set(`${n.id}:${n.answer || ''}`, card);
+    cards.current.set(n.id, card);
     if (andUpload) upload(n);
   };
   /** the square, for the link preview */
   const upload = (n: NoteInfo) => { noteCard(cardData(n), 'square').then((cv) => toBlob(cv, 0.86)).then((b) => api.saveCard('note', n.id, token.current, b)).catch(() => {}); };
   const cardFor = (n: NoteInfo) => {
-    const k = cards.current.get(`${n.id}:${n.answer || ''}`);
+    const k = cards.current.get(n.id);
     if (!k) prepare(n, false);
     if (!k?.file) { say('One moment, Peruzzi is signing it…'); return null; }
     return k.file;
@@ -192,12 +193,13 @@ export default function Asked() {
       sound.keepThrough(); const r = await shareFile(f, `${cfg?.nameplate || 'Peruzzi'} asked: could this be love? ${INVITATION}`, noteUrl(n));
       track('note_share', { via: 'native', how: r }); if (r === 'copied') say('Link copied.');
     },
-    onSend: (n: NoteInfo) => setSend(n),
+    // the card goes with the link: drawn now if it isn't already
+    onSend: (n: NoteInfo) => { if (!cards.current.has(n.id)) prepare(n, false); setSend(n); },
   };
 
-  // a note opened from your notes: its card gets drawn while it's on screen (again once it's answered)
+  // a note opened from your notes: its card gets drawn while it's on screen
   const shown = view === 'note' ? notebook?.notes.find((k) => k.id === id) : undefined;
-  useEffect(() => { if (shown?.kind && !cards.current.has(`${shown.id}:${shown.answer || ''}`)) prepare(shown, false); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [shown?.id, shown?.answer]);
+  useEffect(() => { if (shown?.kind && !cards.current.has(shown.id)) prepare(shown, false); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [shown?.id]);
 
   if (!cfg || status === 'loading') return <Splash />;
   if (view === 'answer') return (
@@ -244,7 +246,7 @@ export default function Asked() {
   return (
     <div className="min-h-dvh bg-ink">
       {screen}
-      {send && notebook && <SendSheet open={!!send} onClose={() => setSend(null)} notebook={{ id: notebook.id, token: token.current }} note={send} nameplate={cfg.nameplate}
+      {send && notebook && <SendSheet open={!!send} onClose={() => setSend(null)} notebook={{ id: notebook.id, token: token.current }} note={send} card={() => cards.current.get(send.id)?.file ?? null} nameplate={cfg.nameplate}
         defaultName={notebook.name || store.name() || ''} onName={(nm) => setNotebook((d) => (d ? { ...d, name: d.name || nm } : d))} email={cfg.email}
         onSent={() => setNotebook((d) => (d ? { ...d, notes: d.notes.map((k) => (k.id === send.id ? { ...k, sent: true } : k)) } : d))} />}
       <MusicPill />
@@ -261,7 +263,6 @@ function Splash() {
 function Notice({ cfg, title, text, onNotes }: { cfg: StageConfig; title: string; text: string; onNotes: (() => void) | null }) {
   return (
     <div className="night relative flex min-h-dvh flex-col items-center justify-center px-8 text-center">
-      <div className="shafts" />
       <Wordmark className="relative text-bone/80" />
       <h1 className="display relative mt-6 text-[34px] leading-tight">{title}</h1>
       <p className="relative mt-3 max-w-sm text-[17px] text-bone/75">{text}</p>

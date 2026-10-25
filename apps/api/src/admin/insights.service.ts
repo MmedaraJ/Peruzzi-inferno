@@ -20,13 +20,12 @@ export class InsightsService {
     };
     const count = (name: string) => this.prisma.event.count({ where: { name, at } });
 
-    const [visitors, opened, wrote, asked, sentPeople, tracklists, notes, kinds, answers, dears, cities, asksByChannel, seen, backs, contacts, marketing, streamClicks, serious, fallbacks, usage, perDay, perHour] = await Promise.all([
+    const [visitors, opened, wrote, asked, sentPeople, tracklists, notes, kinds, dears, cities, asksByChannel, seen, backs, contacts, marketing, streamClicks, serious, fallbacks, usage, perDay, perHour] = await Promise.all([
       this.prisma.$queryRaw<{ n: bigint }[]>`SELECT COUNT(DISTINCT device) AS n FROM "Event" WHERE at >= ${since} AND device IS NOT NULL`.then((r) => Number(r[0]?.n ?? 0)),
       people(['stage_view']), people(['note_written']), people(['note_asked']),
       people(['note_share', 'note_save', 'ask_link', 'ask_email']), people(['tracklist_made']),
       this.prisma.note.count({ where: { createdAt: at } }),
       this.prisma.note.groupBy({ by: ['kind'], where: { createdAt: at, status: 'asked' }, _count: { _all: true } }),
-      this.prisma.note.groupBy({ by: ['answer'], where: { createdAt: at, answer: { not: null } }, _count: { _all: true } }),
       this.prisma.note.groupBy({ by: ['dear'], where: { createdAt: at }, _count: { _all: true }, orderBy: { _count: { dear: 'desc' } }, take: 10 }),
       this.prisma.notebook.groupBy({ by: ['city'], where: { createdAt: at, city: { not: null } }, _count: { _all: true }, orderBy: { _count: { city: 'desc' } }, take: 10 }),
       this.prisma.ask.groupBy({ by: ['channel', 'status'], where: { createdAt: at }, _count: { _all: true } }),
@@ -53,8 +52,6 @@ export class InsightsService {
       tokensIn += (s.tokensIn ?? 0) + (s.cacheRead ?? 0) + (s.cacheWrite ?? 0); tokensOut += s.tokensOut ?? 0; thinkMs += s.ms ?? 0; withUsage += u._count._all;
     }
     const sum = (rows: { _count: { _all: number } }[]) => rows.reduce((a, r) => a + r._count._all, 0);
-    const answered = sum(answers);
-    const yes = answers.find((r) => r.answer === 'yes')?._count._all ?? 0;
     const hours = Array.from({ length: 24 }, (_, h) => Number(perHour.find((r) => r.h === h)?.n ?? 0));
     return {
       since, counting: from,
@@ -62,14 +59,13 @@ export class InsightsService {
         visitors, notes, asked: sum(kinds), tracklists,
         asksEmail: asksByChannel.filter((r) => r.channel === 'email' && r.status === 'sent').reduce((a, r) => a + r._count._all, 0),
         asksLinks: asksByChannel.filter((r) => r.channel === 'link').reduce((a, r) => a + r._count._all, 0),
-        seen, answered, yes, yesRate: answered ? Math.round((yes / answered) * 100) : 0, backs, contacts, marketing, streamClicks, serious, fallbacks,
+        seen, backs, contacts, marketing, streamClicks, serious, fallbacks,
       },
       funnel: [
         { step: 'Opened the stage', people: opened }, { step: 'Wrote a note', people: wrote }, { step: 'Peruzzi read it', people: asked },
         { step: 'Sent, shared or saved it', people: sentPeople }, { step: 'Made a tracklist', people: tracklists },
       ],
       kinds: kinds.map((v) => ({ kind: v.kind, n: v._count._all })).sort((a, b) => b.n - a.n),
-      answers: answers.map((v) => ({ answer: v.answer, n: v._count._all })).sort((a, b) => b.n - a.n),
       dears: dears.map((c) => ({ label: c.dear, n: c._count._all })),
       cities: cities.map((c) => ({ label: c.city, n: c._count._all })),
       perDay: perDay.map((r) => ({ day: r.day, n: Number(r.n) })),

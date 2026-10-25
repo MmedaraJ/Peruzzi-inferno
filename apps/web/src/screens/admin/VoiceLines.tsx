@@ -13,7 +13,7 @@ export function VoiceLines({ token, status, mode }: { token: string; status: any
     <div>
       <Section title="Peruzzi's recorded lines" note={`Used when the stage's voice is set to “Peruzzi's recorded lines” (now: ${mode.replace('_', ' ')}). MP3, M4A or WAV, a few seconds each. Lines without a recording are read by the MC.`}>
         {!status.voice && <p className="mb-4 border border-[#d9a35b]/40 px-3.5 py-2.5 text-[14px] text-[#ecd2ad]">ElevenLabs isn’t connected yet, so only these recordings can play. Add ELEVENLABS_API_KEY on the server for the MC and Peruzzi’s AI voice.</p>}
-        {err && <p className="mb-3 text-[14.5px] text-[#ff9aae]">{err}</p>}
+        {err && <p className="mb-3 text-[14.5px] text-petal">{err}</p>}
         <div className="divide-y divide-bone/10 border border-bone/10">
           {rows.map((r) => (
             <div key={r.key} className="flex items-center gap-3 px-4 py-3">
@@ -43,7 +43,7 @@ function CrowdSounds({ token, canMake }: { token: string; canMake: boolean }) {
   return (
     <Section title="The crowd's sounds" note="How the crowd sounds when it reacts. Phones pick up a new one the next time the stage opens.">
       {!canMake && <p className="mb-4 border border-[#d9a35b]/40 px-3.5 py-2.5 text-[14px] text-[#ecd2ad]">With ELEVENLABS_API_KEY on the server, these are made by themselves. Until then, upload your own, or the crowd only murmurs.</p>}
-      {err && <p className="mb-3 text-[14.5px] text-[#ff9aae]">{err}</p>}
+      {err && <p className="mb-3 text-[14.5px] text-petal">{err}</p>}
       <div className="divide-y divide-bone/10 border border-bone/10">
         {rows.map((r) => (
           <div key={r.key} className="flex flex-wrap items-center gap-3 px-4 py-3">

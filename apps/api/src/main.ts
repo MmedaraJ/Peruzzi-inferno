@@ -36,5 +36,9 @@ async function bootstrap() {
   const port = Number(process.env.PORT || 4000);
   await app.listen(port, '0.0.0.0');
   console.log(`api listening on :${port} (web ${process.env.WEB_URL || 'http://localhost:5173'})`);
+  // deployed without the site's or its own address, the links in emails would lead to localhost
+  if ((process.env.RAILWAY_ENVIRONMENT || process.env.NODE_ENV === 'production') && (!process.env.WEB_URL || !process.env.API_URL)) {
+    console.warn(`WARNING: ${[!process.env.WEB_URL && 'WEB_URL (the site’s address)', !process.env.API_URL && 'API_URL (this API’s address)'].filter(Boolean).join(' and ')} not set: links in emails will point at localhost. Set them in the service's variables.`);
+  }
 }
 bootstrap();
