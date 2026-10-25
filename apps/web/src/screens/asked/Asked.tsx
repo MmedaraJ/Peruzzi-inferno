@@ -185,6 +185,13 @@ export default function Asked() {
     if (!k?.file) { say('One moment, Peruzzi is signing it…'); return null; }
     return k.file;
   };
+  /** the card to send with a note: at once if it's drawn, or as soon as it is, waiting a moment at most so the share
+   *  sheet still opens from the tap */
+  const cardSoon = (n: NoteInfo) => {
+    const k = cards.current.get(n.id);
+    if (!k) return Promise.resolve(null);
+    return k.file ? Promise.resolve(k.file) : Promise.race([k.ready.catch(() => null), new Promise<null>((r) => window.setTimeout(() => r(null), 700))]);
+  };
   const noteUrl = (n: NoteInfo) => `${location.origin}/q/${n.code}`;
   const actions = {
     onSave: async (n: NoteInfo) => { const f = cardFor(n); if (f) { sound.keepThrough(); const r = await saveFile(f); track('note_save', { how: r }); } },
@@ -222,7 +229,8 @@ export default function Asked() {
         onAsked={(n) => {
           setNotebook((d) => (d && !d.notes.some((k) => k.id === n.id) ? { ...d, left: Math.max(0, d.left - 1), notes: [...d.notes, n] } : d)); store.setNotebook({ id: notebook.id, token: token.current });
           // the cards are drawn once the note has landed: drawing them holds up the phone, and the reading is on
-          window.setTimeout(() => (cards.current.has(`${n.id}:`) ? upload(n) : prepare(n)), 2600);
+          // (one already drawn, for a note sent straight away, is kept: only the square still goes up)
+          window.setTimeout(() => (cards.current.has(n.id) ? upload(n) : prepare(n)), 2600);
         }}
         onNext={next}
         onNotes={out}
@@ -246,7 +254,7 @@ export default function Asked() {
   return (
     <div className="min-h-dvh bg-ink">
       {screen}
-      {send && notebook && <SendSheet open={!!send} onClose={() => setSend(null)} notebook={{ id: notebook.id, token: token.current }} note={send} card={() => cards.current.get(send.id)?.file ?? null} nameplate={cfg.nameplate}
+      {send && notebook && <SendSheet open={!!send} onClose={() => setSend(null)} notebook={{ id: notebook.id, token: token.current }} note={send} card={() => cardSoon(send)} nameplate={cfg.nameplate}
         defaultName={notebook.name || store.name() || ''} onName={(nm) => setNotebook((d) => (d ? { ...d, name: d.name || nm } : d))} email={cfg.email}
         onSent={() => setNotebook((d) => (d ? { ...d, notes: d.notes.map((k) => (k.id === send.id ? { ...k, sent: true } : k)) } : d))} />}
       <MusicPill />

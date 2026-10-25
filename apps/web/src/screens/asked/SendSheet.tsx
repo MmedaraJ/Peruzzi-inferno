@@ -18,8 +18,8 @@ const mask = (e: string) => { const [u, d] = e.split('@'); return `${u.slice(0, 
  *  on the address this page is on, so it opens wherever the site does. */
 export function SendSheet({ open, onClose, notebook, note, card, nameplate, defaultName, onName, onSent, email }: {
   open: boolean; onClose: () => void; notebook: { id: string; token: string }; note: NoteInfo;
-  /** the note's story card, once it's drawn (it goes with the link) */
-  card: () => File | null;
+  /** the note's story card (it goes with the link), or nothing if it isn't drawn in time */
+  card: () => Promise<File | null>;
   nameplate: string; defaultName: string; onName: (n: string) => void; onSent: () => void; email: boolean;
 }) {
   const [step, setStep] = useState<Step>('names');
@@ -59,7 +59,7 @@ export function SendSheet({ open, onClose, notebook, note, card, nameplate, defa
         <div className="mt-5 flex flex-col gap-2.5">
           {/* the card and the link together, through the phone's share sheet (just the link where it can't take a picture) */}
           <button onClick={async () => {
-            sound.keepThrough(); const r = await shareFile(card(), words(), link);
+            sound.keepThrough(); const r = await shareFile(await card(), words(), link);
             track('note_share', { via: 'native', how: r }); if (r === 'copied') setMsg('Copied. Paste it to them anywhere.');
           }} className="flex min-h-[54px] items-center justify-center gap-2.5 rounded-xl bg-rose text-[17px] font-semibold text-white transition-colors hover:bg-rose-deep"><ShareNetworkIcon size={21} weight="bold" /> Send it with the card</button>
           <a href={`https://wa.me/?text=${encodeURIComponent(text(link))}`} target="_blank" rel="noreferrer" onClick={() => track('note_share', { via: 'whatsapp' })}

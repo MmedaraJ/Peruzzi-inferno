@@ -24,6 +24,36 @@ try {
   const lights = () => p.evaluate(() => { const c = document.querySelector('canvas[data-lights]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0, sum = 0; for (let i = 0; i < d.length; i += 4) { const v = ((d[i] + d[i + 1] + d[i + 2]) * d[i + 3]) / 255; sum += v; if (v > 240) lit++; } return { lit, sum: Math.round(sum), of: d.length / 4 }; });
   const l1 = await lights(); await p.waitForTimeout(700); const l2 = await lights();
   check('the rig’s lights are up, and moving with the song', l1.lit > 50 && l2.lit > 50 && l1.lit < l1.of / 2 && l1.sum !== l2.sum, JSON.stringify({ l1, l2 }));
+  // on the beat: what the lights draw, frame by frame, against the song's clock (the beat grid in lib/beat.ts)
+  const BEAT = 60 / 103, FIRST = 0.341;
+  const lightsFor = (secs, from = null) => p.evaluate(async ({ secs, from }) => {
+    const el = window.__sound.musicEl; if (from != null) { el.currentTime = from; await new Promise((r) => setTimeout(r, 300)); }
+    const cv = document.querySelector('canvas[data-lights]'); const out = []; const t0 = performance.now();
+    await new Promise((res) => { const f = (now) => { const fr = cv.__frame; if (fr?.live) out.push({ now, t: el.currentTime, b: fr.b, pans: fr.pans.slice(), lit: fr.lit.slice() }); if (now - t0 < secs * 1000) requestAnimationFrame(f); else res(); }; requestAnimationFrame(f); });
+    return out;
+  }, { secs, from });
+  const onBeat = (fr) => {
+    const lag = fr.map((x) => Math.abs(x.b - (x.t - FIRST) / BEAT)).sort((a, c) => a - c);
+    const lands = [];   // where a head stops or turns round, how far from the nearest beat (frames dropped either side aside)
+    for (let i = 0; i < 6; i++) for (let k = 2; k < fr.length; k++) {
+      if (fr[k].now - fr[k - 2].now > 70) continue;
+      const v1 = fr[k - 1].pans[i] - fr[k - 2].pans[i], v2 = fr[k].pans[i] - fr[k - 1].pans[i];
+      if (Math.abs(v1) > 0.002 && (Math.abs(v2) <= 0.002 || Math.sign(v1) !== Math.sign(v2))) lands.push(Math.abs(fr[k - 1].b - Math.round(fr[k - 1].b)));
+    }
+    // the brightest frame of each beat, from the beat to the next (those the recording has from the start)
+    const beats = {};
+    for (const x of fr) { const n = Math.floor(x.b), m = x.lit.reduce((a, c) => a + c, 0); (beats[n] ||= []).push({ m, d: x.b - n }); }
+    const peaks = Object.values(beats).filter((xs) => Math.min(...xs.map((x) => x.d)) < 0.08).map((xs) => xs.reduce((a, x) => (x.m > a.m ? x : a)).d);
+    return { lag: lag[lag.length >> 1], lands, peaks };
+  };
+  const ob = onBeat(await lightsFor(4));
+  check('the lights keep the song’s own time', ob.lag < 0.03, `${(ob.lag * BEAT * 1000).toFixed(1)} ms off`);
+  check('…every move lands on a beat, whatever the move', ob.lands.length >= 10 && ob.lands.every((d) => d <= 0.1), `${ob.lands.length} landings, worst ${Math.max(...ob.lands).toFixed(3)} of a beat`);
+  check('…and each beat is their brightest moment', ob.peaks.length >= 5 && ob.peaks.every((d) => d <= 0.08), `${ob.peaks.length} beats, worst ${Math.max(...ob.peaks).toFixed(3)} of a beat after it`);
+  const shape = await lightsFor(4.5, FIRST + 63.5 * BEAT);
+  const mean = (lo, hi) => { const s = shape.filter((x) => x.b >= lo && x.b < hi); return s.reduce((a, x) => a + x.lit.reduce((q, c) => q + c, 0) / 6, 0) / (s.length || 1); };
+  const [before, inBreak, drop] = [mean(64, 66), mean(66, 68), mean(68, 69.5)];
+  check('the lights go dark for the break before the drop, and hit the drop', inBreak < before * 0.5 && drop > inBreak * 2.5, `${before.toFixed(2)} → ${inBreak.toFixed(2)} → ${drop.toFixed(2)}`);
   check('one sentence, two blanks: “Dear ___, you ___.”, and nothing else on the paper', await p.getByText('Dear', { exact: true }).isVisible() && await p.getByText('You', { exact: true }).isVisible()
     && await p.getByText('I think you').count() === 0 && await p.getByText('Peruzzi asks', { exact: true }).count() === 0 && await p.getByText('Could this be love?').count() === 0 && await what.isVisible());
   check('what they do is kept short by its count', await p.getByText('0/80', { exact: true }).isVisible());
