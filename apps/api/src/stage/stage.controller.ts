@@ -71,10 +71,10 @@ export class StageController {
   /** a note's reading, for the phone that wrote it (its notebook's token) or the one it was sent to (the ask's code) */
   @Get('voice/note/:id')
   async spoken(@Param('id') id: string, @Query('t') t: string | undefined, @Query('a') a: string | undefined, @Res() res: Response) {
-    const k = await this.prisma.note.findUnique({ where: { id }, select: { status: true, peruzzi: true, notebook: { select: { token: true } }, asks: a ? { where: { code: String(a).slice(0, 16) }, select: { id: true } } : false } });
-    const allowed = !!k && k.status === 'asked' && !!k.peruzzi && ((!!t && k.notebook.token === t) || (!!a && (k as any).asks?.length > 0));
+    const k = await this.prisma.note.findUnique({ where: { id }, select: { status: true, dear: true, line: true, fallback: true, notebook: { select: { token: true } }, asks: a ? { where: { code: String(a).slice(0, 16) }, select: { id: true } } : false } });
+    const allowed = !!k && k.status === 'asked' && ((!!t && k.notebook.token === t) || (!!a && (k as any).asks?.length > 0));
     if (!allowed) { res.status(404).end(); return; }
-    return this.sendAudio(res, await this.voice.say(noteReading({ peruzzi: k!.peruzzi! })), 3600);
+    return this.sendAudio(res, await this.voice.say(noteReading(k!)), 3600);
   }
   /** The crowd's voices. Asked for with the version from the config, a sound can be kept for good: a new one comes with
    *  a new version. The first ask for one that isn't made yet makes it, which takes a few seconds. */

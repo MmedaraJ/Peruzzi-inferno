@@ -2,19 +2,19 @@ import { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 // The small parts the shared pages share with the stage. Nothing here animates with framer-motion, so the shared pages
-// don't download it; what needs it (the sheet, the stamp's landing) lives in its own module.
+// don't download it; what needs it (the sheet) lives in its own module.
 
 /** What's laid over the page and holds text fields (the note being written, the sheets), put straight in the page's body
  *  rather than in its scrolling box (#root, see styles.css), so it sits on the page itself (see useVisualViewport); and
  *  what has to show above it. */
 export function OnScreen({ children }: { children: ReactNode }) { return createPortal(children, document.body); }
 
-/** "Peruzzi Asked", in the display face, spaced wide, with a short rule under it. */
+/** "Peruzzi Asks", in the display face, spaced wide, with a short rule under it. */
 export function Wordmark({ className = '', size = 'md' }: { className?: string; size?: 'sm' | 'md' | 'lg' }) {
   const fs = size === 'lg' ? 'text-[30px]' : size === 'md' ? 'text-[20px]' : 'text-[14px]';
   return (
     <span className={`inline-flex flex-col items-center ${className}`}>
-      <span className={`display whitespace-nowrap uppercase tracking-[0.16em] ${fs}`}>Peruzzi Asked</span>
+      <span className={`display whitespace-nowrap uppercase tracking-[0.16em] ${fs}`}>Peruzzi Asks</span>
       <span aria-hidden className={`mt-1 block h-px bg-current opacity-40 ${size === 'sm' ? 'w-12' : 'w-20'}`} />
     </span>
   );
@@ -22,11 +22,11 @@ export function Wordmark({ className = '', size = 'md' }: { className?: string; 
 
 type BtnKind = 'primary' | 'ghost' | 'quiet' | 'paper';
 export function Button({ kind = 'primary', className = '', children, ...p }: { kind?: BtnKind } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  const base = 'relative inline-flex min-h-[52px] items-center justify-center gap-2 px-6 text-[17px] transition-[transform,opacity,background-color] duration-150 active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100 aria-disabled:opacity-40';
+  const base = 'relative inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl px-6 text-[17px] transition-[transform,opacity,background-color,filter] duration-150 active:scale-[0.985] disabled:opacity-40 disabled:active:scale-100 aria-disabled:opacity-40';
   const k = {
-    primary: 'bg-bone text-ink font-semibold shadow-[0_10px_30px_-12px_rgba(236,229,216,0.45)] hover:bg-white',
+    primary: 'fire text-white font-semibold shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)] hover:brightness-110',
     ghost: 'border border-bone/35 text-bone hover:border-bone/70 hover:bg-bone/5',
-    quiet: 'text-bone/80 underline decoration-bone/30 underline-offset-4 min-h-11 px-2 hover:text-bone',
+    quiet: 'text-bone/80 underline decoration-bone/30 underline-offset-4 min-h-11 rounded-none px-2 hover:text-bone',
     paper: 'bg-paper-ink text-paper font-semibold',
   }[kind];
   return <button {...p} className={`${base} ${k} ${className}`}>{children}</button>;
@@ -35,7 +35,7 @@ export function Button({ kind = 'primary', className = '', children, ...p }: { k
 export function Chip({ on, children, className = '', ...p }: { on?: boolean } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button type="button" aria-pressed={on} {...p}
-      className={`min-h-10 rounded-full border px-4 text-[15px] leading-tight transition-colors duration-150 ${on ? 'border-bone bg-bone text-ink' : 'border-bone/25 bg-bone/[0.03] text-bone/90 hover:border-bone/50'} ${className}`}>
+      className={`min-h-10 rounded-full border px-4 text-[15px] leading-tight transition-colors duration-150 ${on ? 'fire border-transparent text-white' : 'border-bone/25 bg-bone/[0.03] text-bone/90 hover:border-bone/50'} ${className}`}>
       {children}
     </button>
   );
@@ -51,7 +51,7 @@ export function Footnote({ demo, credit, className = '' }: { demo?: string | nul
   return (
     <footer className={`text-center text-[12px] leading-relaxed text-bone/45 ${className}`}>
       {demo && <p>{demo}</p>}
-      {credit && <p className="mt-1">Made by <a className="text-bone/65 underline decoration-bone/25 underline-offset-[3px] hover:text-bone" href={`mailto:mmedarajosiah@gmail.com?subject=${encodeURIComponent('About Peruzzi Asked')}`}>Mmedara Josiah</a></p>}
+      {credit && <p className="mt-1">Made by <a className="text-bone/65 underline decoration-bone/25 underline-offset-[3px] hover:text-bone" href={`mailto:mmedarajosiah@gmail.com?subject=${encodeURIComponent('About Peruzzi Asks')}`}>Mmedara Josiah</a></p>}
     </footer>
   );
 }

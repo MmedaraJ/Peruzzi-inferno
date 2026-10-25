@@ -3,7 +3,6 @@ import { CaretRightIcon, PlusIcon } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { NoteInfo, Notebook } from '../../lib/api';
 import { Button, Label } from '../../components/ui';
-import { Stamp } from '../../components/Stamp';
 import { TopBar } from '../../components/TopBar';
 import { store } from '../../lib/store';
 import { noteState } from './NoteView';
@@ -42,11 +41,11 @@ export function Notes({ notebook, onBack, onOpen, onWrite, onTracklist }: {
                 <div className="min-w-0 flex-1">
                   <p className="caps truncate text-[9.5px] text-paper-ink/50">Note {k.noteNo} · {k.title}</p>
                   <p className="mt-0.5 text-[17px] font-medium">Dear {k.dear},</p>
-                  <p className={`mt-0.5 line-clamp-2 text-[14.5px] leading-snug ${k.answer ? 'text-stamp' : 'text-paper-ink/70'}`}>{state || k.peruzzi}</p>
+                  <p className={`mt-0.5 line-clamp-2 text-[14.5px] leading-snug ${k.answer ? 'text-fire' : 'text-paper-ink/70'}`}>{state || k.line}</p>
                 </div>
                 {k.answer
-                  ? <svg aria-label="Answered" viewBox="0 0 24 24" className="h-7 w-7 shrink-0"><rect x="2" y="5" width="16" height="16" fill="none" stroke="rgba(29,26,22,0.6)" strokeWidth="1.6" /><path d="M5 13 L10 18 L21 3" fill="none" stroke="#a11d2a" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                  : <Stamp kind={k.kind!} text={k.stamp || 'Love'} size="sm" land={false} className="shrink-0" />}
+                  ? <svg aria-label="Answered" viewBox="0 0 24 24" className="h-7 w-7 shrink-0"><rect x="2" y="5" width="16" height="16" rx="2.5" fill="none" stroke="rgba(36,9,31,0.6)" strokeWidth="1.6" /><path d="M5 13 L10 18 L21 3" fill="none" stroke="#ee1d52" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  : <span aria-label="Not answered yet" className="fire flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[15px] font-semibold text-white">?</span>}
                 <CaretRightIcon size={16} className="shrink-0 text-paper-ink/45 transition-transform group-hover:translate-x-0.5" />
               </motion.button>
             );

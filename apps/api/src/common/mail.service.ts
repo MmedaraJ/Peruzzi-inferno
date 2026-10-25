@@ -19,7 +19,7 @@ export class MailService {
   private sentAt: number[] = []; private capSaid = 0;
   async send(to: string, subject: string, html: string, text: string, headers?: Record<string, string>) {
     const key = process.env.RESEND_API_KEY;
-    const from = process.env.MAIL_FROM || 'Peruzzi Asked <notes@example.com>';
+    const from = process.env.MAIL_FROM || 'Peruzzi Asks <notes@example.com>';
     const replyTo = process.env.MAIL_REPLY_TO || undefined;
     if (!key || !senderReady()) {
       this.log.log(`[dry-run] to=${to} subject="${subject}"`);

@@ -15,7 +15,7 @@ import { isField, touch } from './viewport';
  *  does, and a pill asks for that tap. After the fan goes off to stream the song, it waits for the pill instead, so it
  *  never cuts into the song playing in another app. */
 
-export type Sfx = 'mic' | 'crash' | 'tick' | 'drumroll' | 'stamp' | 'whoosh' | 'murmur' | 'paper' | 'chime';
+export type Sfx = 'mic' | 'crash' | 'tick' | 'drumroll' | 'whoosh' | 'murmur' | 'paper' | 'chime';
 export type CrowdSound = 'ooh' | 'gasp' | 'laugh' | 'murmur' | 'aww' | 'cheer';
 
 export const SONG = '/media/audio/inferno.mp3';
@@ -53,6 +53,8 @@ class Sound {
   private emit() { this.listeners.forEach((f) => f()); }
   get unlocked() { return !!this.ctx && this.ctx.state === 'running'; }
   get musicPlaying() { return !!this.musicEl && !this.musicEl.paused; }
+  /** Where the song is, in seconds, while it plays (the crowd moves to its beat); null while it doesn't. */
+  songTime() { const el = this.musicEl; return el && !el.paused && el.readyState >= 2 ? el.currentTime : null; }
 
   /** Call inside a tap: iPhones only start sound from one. Builds the graph the first time. */
   unlock() {
@@ -248,7 +250,6 @@ class Sound {
       case 'crash': dur = this.crash(t, s); break;
       case 'tick': dur = this.tick(t); break;
       case 'drumroll': dur = this.drumroll(t, opts.duration ?? 2.6); break;
-      case 'stamp': dur = this.stamp(t, s); break;
       case 'whoosh': dur = this.whoosh(t, opts.duration ?? 0.7); break;
       case 'murmur': dur = this.murmur(t, opts.duration ?? 2.4, 0.55 * s); break;
       case 'paper': dur = this.paper(t); break;
@@ -333,13 +334,6 @@ class Sound {
       if (i % 3 === 0) this.osc('triangle', 210, 180, at, 0.04, 0.07, this.env(at, amp * 0.25, 0.001, 0.05, this.sfxBus));
     }
     return dur;
-  }
-  /** A rubber stamp coming down on paper. */
-  private stamp(t: number, s: number) {
-    this.osc('sine', 128, 54, t, 0.08, 0.22, this.env(t, 0.8 * s, 0.002, 0.15, this.sfxBus, 0.25));
-    this.burst(t, 0.06, 'lowpass', 1300, 0.6, this.env(t, 0.5 * s, 0.001, 0.05, this.sfxBus, 0.15));
-    this.burst(t + 0.008, 0.08, 'highpass', 3600, 0.5, this.env(t + 0.008, 0.1 * s, 0.002, 0.07, this.sfxBus));
-    return 0.35;
   }
   private paper(t: number) { this.burst(t, 0.22, 'highpass', 2600, 0.4, this.env(t, 0.12, 0.03, 0.18, this.sfxBus)); return 0.3; }
   /** Air moving: a note sliding in, a spotlight swinging round. */

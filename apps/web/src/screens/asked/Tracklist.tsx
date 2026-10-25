@@ -11,7 +11,7 @@ import { Button, Label } from '../../components/ui';
 import { TopBar } from '../../components/TopBar';
 import { ListenButton } from '../../components/Listen';
 
-const field = 'min-h-12 w-full border border-bone/20 bg-black/30 px-3.5 text-[17px] text-bone placeholder:text-bone/35 focus:border-bone/60 focus:outline-none';
+const field = 'min-h-12 w-full rounded-lg border border-bone/20 bg-black/30 px-3.5 text-[17px] text-bone placeholder:text-bone/35 focus:border-bone/60 focus:outline-none';
 export const tracklistTitle = (name: string | null | undefined) => (name?.trim() ? `${name.trim()}’s tracklist` : 'Your tracklist');
 
 /** The tracklist: every note so far as a track on an album's back cover, with a name and a city, and a card to post.
@@ -42,9 +42,9 @@ export function Tracklist({ cfg, notebook, token, onUpdate, onWrite, onBack }: {
       const date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long' });
       const answered = asked.filter((k) => k.answer).length;
       const meta = [`${asked.length} ${asked.length === 1 ? 'note' : 'notes'}`, answered ? `${answered} answered` : '', city.trim(), date].filter(Boolean).join(' · ');
-      const data = { name: name.trim() ? `${name.trim()}’s notes` : 'Love Notes', meta, notes: [...asked].reverse().map((k) => ({ noteNo: k.noteNo, title: k.title, dear: k.dear, answer: k.answer, escape: k.escape || '' })), site: location.host, song: cfg.song, artist: cfg.artist, nameplate: cfg.nameplate };
+      const data = { name: name.trim() ? `${name.trim()}’s tracklist` : 'My tracklist', meta, notes: [...asked].reverse().map((k) => ({ noteNo: k.noteNo, title: k.title, dear: k.dear, answer: k.answer, escape: k.escape || '' })), site: location.host, song: cfg.song, artist: cfg.artist, nameplate: cfg.nameplate };
       const story = await tracklistCard(data, 'story'); if (gone) return;
-      const blob = await toBlob(story, 0.9); const file = new File([blob], `peruzzi-asked-tracklist-${notebook.code}.jpg`, { type: 'image/jpeg' });
+      const blob = await toBlob(story, 0.9); const file = new File([blob], `peruzzi-asks-tracklist-${notebook.code}.jpg`, { type: 'image/jpeg' });
       setCard((old) => { if (old) URL.revokeObjectURL(old.url); return { url: URL.createObjectURL(blob), file }; });
       // the square goes up for the link preview, and the tracklist keeps the name and city
       const key = JSON.stringify([name, city, asked.length, answered]);
@@ -78,9 +78,9 @@ export function Tracklist({ cfg, notebook, token, onUpdate, onWrite, onBack }: {
           </motion.div>
         </div>
         <div className="mt-5 grid grid-cols-3 gap-2">
-          <button disabled={!card} onClick={async () => { if (!card) return; sound.keepThrough(); const r = await saveFile(card.file); track('tracklist_save', { how: r }); }} className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 border border-bone/25 text-[12.5px] disabled:opacity-40"><DownloadSimpleIcon size={19} />Save</button>
-          <button disabled={!card} onClick={async () => { sound.keepThrough(); const r = await shareFile(card?.file || null, `My tracklist from ${cfg.nameplate} Asked. Who’s on your mind?`, url); track('tracklist_share', { how: r }); if (r === 'copied') setMsg('Link copied.'); }} className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 bg-bone text-[12.5px] font-semibold text-ink disabled:opacity-40"><ShareNetworkIcon size={19} />Share</button>
-          <button onClick={async () => { if (await copy(url)) setMsg('Link copied.'); }} className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 border border-bone/25 text-[12.5px]"><LinkIcon size={19} />Copy link</button>
+          <button disabled={!card} onClick={async () => { if (!card) return; sound.keepThrough(); const r = await saveFile(card.file); track('tracklist_save', { how: r }); }} className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 rounded-xl border border-bone/25 text-[12.5px] disabled:opacity-40"><DownloadSimpleIcon size={19} />Save</button>
+          <button disabled={!card} onClick={async () => { sound.keepThrough(); const r = await shareFile(card?.file || null, `My tracklist from ${cfg.nameplate} Asks. Who’s on your mind?`, url); track('tracklist_share', { how: r }); if (r === 'copied') setMsg('Link copied.'); }} className="fire flex min-h-[54px] flex-col items-center justify-center gap-0.5 rounded-xl text-[12.5px] font-semibold text-white disabled:opacity-40"><ShareNetworkIcon size={19} />Share</button>
+          <button onClick={async () => { if (await copy(url)) setMsg('Link copied.'); }} className="flex min-h-[54px] flex-col items-center justify-center gap-0.5 rounded-xl border border-bone/25 text-[12.5px]"><LinkIcon size={19} />Copy link</button>
         </div>
         {msg && <p className="mt-2 text-center text-[14px] text-bone/65">{msg}</p>}
 
@@ -99,10 +99,10 @@ export function Tracklist({ cfg, notebook, token, onUpdate, onWrite, onBack }: {
                 <Button kind="ghost" className="!min-h-12 !px-4" disabled={mail === 'sending'} onClick={sendMail}>{mail === 'sending' ? '…' : 'Send'}</Button>
               </div>
               <label className="mt-3 flex items-start gap-3 text-[14.5px] leading-snug text-bone/70">
-                <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#ece5d8]" />
+                <input type="checkbox" checked={news} onChange={(e) => setNews(e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#ff6a1f]" />
                 Also send me news from {cfg.artist}. Unsubscribe any time.
               </label>
-              {mail !== 'idle' && mail !== 'sending' && <p className="mt-2 text-[14px] text-[#e7a3a3]">{mail}</p>}
+              {mail !== 'idle' && mail !== 'sending' && <p className="mt-2 text-[14px] text-[#ff9aae]">{mail}</p>}
             </>
           )}
         </div>

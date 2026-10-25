@@ -8,7 +8,7 @@ import { EmailKind, renderEmail } from '../common/emails';
 import { noteNo } from '../common/util';
 import { FIXED_LINES, VoiceService } from '../stage/voice.service';
 import { GALLERY_SOUNDS, SoundService } from '../stage/sound.service';
-import { NOTE_COLUMNS, STAMPS } from '../stage/stage.service';
+import { NOTE_COLUMNS } from '../stage/stage.service';
 import { InsightsService } from './insights.service';
 import { CostsService } from './costs.service';
 import { aiAvailable } from '../stage/ai';
@@ -114,14 +114,14 @@ export class AdminController {
     if (before) where.seq = { lt: Number(before) };
     if (q) where.OR = [{ title: { contains: q, mode: 'insensitive' } }, { dear: { contains: q, mode: 'insensitive' } }, { statement: { contains: q, mode: 'insensitive' } }];
     const rows = await this.prisma.note.findMany({ where, orderBy: { seq: 'desc' }, take: 40, select: { ...NOTE_COLUMNS, notebook: { select: { name: true, city: true, backOf: true } }, _count: { select: { asks: true } } } });
-    return rows.map((k) => ({ id: k.id, seq: k.seq, noteNo: noteNo(k.seq), code: k.code, n: k.n, dear: k.dear, title: k.title, status: k.status, kind: k.kind, stamp: k.kind ? STAMPS[k.kind] : null, answer: k.answer, flags: k.flags, fallback: k.fallback, hidden: k.hidden, createdAt: k.createdAt, writer: k.notebook.name, city: k.notebook.city, back: !!k.notebook.backOf, asks: k._count.asks, ms: k.ms }));
+    return rows.map((k) => ({ id: k.id, seq: k.seq, noteNo: noteNo(k.seq), code: k.code, n: k.n, dear: k.dear, title: k.title, status: k.status, kind: k.kind, answer: k.answer, flags: k.flags, fallback: k.fallback, hidden: k.hidden, createdAt: k.createdAt, writer: k.notebook.name, city: k.notebook.city, back: !!k.notebook.backOf, asks: k._count.asks, ms: k.ms }));
   }
   @Get('notes/:id')
   async one(@Param('id') id: string) {
     const k = await this.prisma.note.findUnique({ where: { id }, select: { ...NOTE_COLUMNS, notebook: { select: { code: true, name: true, city: true, createdAt: true } }, asks: true } });
     if (!k) throw new NotFoundException();
     return {
-      ...k, noteNo: noteNo(k.seq), stamp: k.kind ? STAMPS[k.kind] : null,
+      ...k, noteNo: noteNo(k.seq),
       notebook: { code: k.notebook.code, name: k.notebook.name, city: k.notebook.city, createdAt: k.notebook.createdAt },
       asks: k.asks.map((a) => ({ channel: a.channel, status: a.status, senderName: a.senderName, recipientName: a.recipientName, recipientMask: a.recipientMask, openedAt: a.openedAt, answeredAt: a.answeredAt, backAt: a.backAt, createdAt: a.createdAt })),
     };
@@ -139,7 +139,7 @@ export class AdminController {
   async contacts(@Query('format') format?: string, @Res({ passthrough: true }) res?: Response) {
     const rows = await this.prisma.contact.findMany({ orderBy: { createdAt: 'desc' }, take: format === 'csv' ? 100_000 : 200 });
     if (format === 'csv' && res) {
-      res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', 'attachment; filename="peruzzi-asked-contacts.csv"');
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8'); res.setHeader('Content-Disposition', 'attachment; filename="peruzzi-asks-contacts.csv"');
       const q = (v: any) => `"${String(v ?? '').replace(/"/g, '""')}"`;
       return ['email,name,agreed_to_news,agreed_at,verified,unsubscribed,source,created_at', ...rows.map((c) => [c.email, c.name, c.marketing && !c.unsubscribedAt ? 'yes' : 'no', c.marketingAt?.toISOString(), c.verifiedAt ? 'yes' : 'no', c.unsubscribedAt ? 'yes' : 'no', c.source, c.createdAt.toISOString()].map(q).join(','))].join('\n');
     }
@@ -154,7 +154,7 @@ export class AdminController {
     const site = await this.cfg.site();
     const m = renderEmail(t, {
       vars: { code: '402719', sender: 'Tọ́kẹ́', senderMask: 't***@gmail.com', recipient: 'Dayo', name: 'Tọ́kẹ́', site: this.cfg.siteName, artist: site.artist, song: site.song },
-      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'I think you saved the last puff-puff for me on purpose.', peruzzi: 'Dayo, nobody saves the last puff-puff by accident.', escape: 'I was full.', answer: kind === 'answered' ? 'yes' : null }],
+      boxes: kind === 'code' ? [] : [{ noteNo: '0042', title: 'Last Puff-Puff', dear: 'Dayo', line: 'You guarded the last puff-puff for me like it was your WAEC result.', escape: 'I was full.', answer: kind === 'answered' ? 'yes' : null }],
       links: { cta: `${this.cfg.webUrl}/`, cta2: `${this.cfg.webUrl}/`, cta3: site.smartLink },
       unsubscribe: kind === 'code' ? undefined : { url: `${this.cfg.webUrl}`, label: kind === 'ask' ? 'Never send me notes again' : 'Stop these emails' },
     });

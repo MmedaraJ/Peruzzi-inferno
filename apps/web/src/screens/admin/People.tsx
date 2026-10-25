@@ -10,7 +10,7 @@ export function People({ token }: { token: string }) {
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <Section title="Emails" note={c ? `${c.total.toLocaleString()} in all · ${c.news.toLocaleString()} said yes to news from Peruzzi` : ''}
-        right={<button onClick={async () => { const b = await admin.contactsCsv(token); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'peruzzi-asked-contacts.csv'; a.click(); }} className="flex shrink-0 items-center gap-2 border border-bone/25 px-3 py-1.5 text-[14px]"><DownloadSimpleIcon size={15} /> CSV</button>}>
+        right={<button onClick={async () => { const b = await admin.contactsCsv(token); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'peruzzi-asks-contacts.csv'; a.click(); }} className="flex shrink-0 items-center gap-2 border border-bone/25 px-3 py-1.5 text-[14px]"><DownloadSimpleIcon size={15} /> CSV</button>}>
         <p className="mb-3 text-[13.5px] text-bone/50">Only those who said yes to news can be emailed about Peruzzi. Everyone else gave their address for one thing: their tracklist, or sending a note.</p>
         <div className="divide-y divide-bone/10 border border-bone/10">
           {c?.rows.map((r: any) => (

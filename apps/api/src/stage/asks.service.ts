@@ -127,8 +127,8 @@ export class AsksService {
     return { ok: true, code: a.code, left: Math.max(0, c.asksPerDay - sent - 1) };
   }
 
-  private box(k: { seq: number; title: string; dear: string; line: string | null; peruzzi: string | null; escape: string | null; answer?: string | null }): NoteBox {
-    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '', peruzzi: k.peruzzi || '', escape: k.escape || '', answer: (k.answer as Answer) || null };
+  private box(k: { seq: number; title: string; dear: string; line: string | null; escape: string | null; answer?: string | null }): NoteBox {
+    return { noteNo: noteNo(k.seq), title: k.title, dear: k.dear, line: k.line || '', escape: k.escape || '', answer: (k.answer as Answer) || null };
   }
 
   // ---- the person asked -----------------------------------------------------------------------------------------
@@ -222,7 +222,7 @@ export class AsksService {
   }
   optOutPage(kind: string, done: boolean, action: string) {
     const what = kind === 'block' ? 'Nobody will be able to send you a note by email from here again.' : 'We won’t email you again.';
-    const body = done ? `<h1>Done.</h1><p>${what}</p>` : `<h1>${kind === 'block' ? 'Never be sent a note again?' : 'Stop our emails?'}</h1><p>${kind === 'block' ? 'Nobody will be able to send you a note by email from Peruzzi Asked.' : 'You’ll stop getting answers, tracklists and news.'}</p><form method="post" action="${esc(action)}"><button>Yes, stop them</button></form>`;
-    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peruzzi Asked</title><style>body{margin:0;background:#141210;color:#efe8dc;font:18px/1.55 Georgia,serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}main{max-width:420px}h1{font-weight:400;font-size:30px;margin:0 0 12px}button{margin-top:16px;font:600 17px Georgia,serif;background:#efe8dc;color:#141210;border:0;padding:14px 22px;cursor:pointer}</style></head><body><main><p style="letter-spacing:.3em;font-size:12px;text-transform:uppercase;opacity:.7">Peruzzi Asked</p>${body}</main></body></html>`;
+    const body = done ? `<h1>Done.</h1><p>${what}</p>` : `<h1>${kind === 'block' ? 'Never be sent a note again?' : 'Stop our emails?'}</h1><p>${kind === 'block' ? 'Nobody will be able to send you a note by email from Peruzzi Asks.' : 'You’ll stop getting answers, tracklists and news.'}</p><form method="post" action="${esc(action)}"><button>Yes, stop them</button></form>`;
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Peruzzi Asks</title><style>body{margin:0;background:#12050f;color:#fff2e8;font:18px/1.55 Georgia,serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;box-sizing:border-box}main{max-width:420px}h1{font-weight:400;font-size:30px;margin:0 0 12px}button{margin-top:16px;font:600 17px Georgia,serif;background:#ff3d4f;background-image:linear-gradient(110deg,#ffb627,#ff6a1f 32%,#ff2d55 66%,#d4157e);color:#fff;border:0;border-radius:6px;padding:14px 22px;cursor:pointer}</style></head><body><main><p style="letter-spacing:.3em;font-size:12px;text-transform:uppercase;opacity:.7">Peruzzi Asks</p>${body}</main></body></html>`;
   }
 }

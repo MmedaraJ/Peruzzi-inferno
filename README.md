@@ -1,10 +1,10 @@
-# Peruzzi Asked
+# Peruzzi Asks
 
-A fan experience for **Inferno**, Peruzzi's new song, whose hook asks "could this be love?". A fan writes someone a note in one sentence: "Dear ___, I think you ___. Could this be love?" A crush, a bestie, a mum, even their bed. Peruzzi reads it at the mic in front of his crowd, the band and the crowd give their word, his stamp comes down (Love, nearly always), and he adds one line of his own. Then he asks the person it's for: they open the note on their phone and tick one box, Yes, No, or a third box Peruzzi wrote just for them ("I was full."). The answer comes back to the writer, and anyone can write back or write their own.
+A fan experience for **Inferno**, Peruzzi's new song, whose hook asks "could this be love?". A fan writes someone a note in one sentence: "Dear ___, you ___." Something sweet they did, or something they shouldn't have. A crush, a bestie, a mum, even their bed. Peruzzi reads it at the mic in front of his crowd, tells what they did back to them, funnier, and asks: "Could this be love?" The person it's for opens the note on their phone and ticks one box: Yes, No, or a third box Peruzzi wrote just for them ("I was full."). The answer comes back to the writer, and anyone can write back or write their own.
 
 The song's snippet plays underneath the whole time.
 
-**For now.** The song title ("Inferno"), the snippet, the cover and the photo on the stage are stand-ins from what was to hand, until Peruzzi's team sends the official assets (see *Before launch*). The look is the Court of 9's: the same type, the same monochrome and sepia, the same red ink.
+**For now.** The snippet, the cover and the photo on the stage are stand-ins from what was to hand, until Peruzzi's team sends the official assets (see *Before launch*). The look is the song's: a night at Peruzzi's show, lit in flame, red and magenta with gold at the edge of the light, the notes on warm white paper, and his question in the song's colours.
 
 ## What's where
 
@@ -17,7 +17,7 @@ There's no front page: the site opens on a note, ready to write. Each screen has
 
 | Address | Screen |
 |---|---|
-| `/` | a note: "Dear ___, I think you ___. Could this be love?", Peruzzi's reading, and the note (`?back=<ask>` writes back to the one who sent that note) |
+| `/` | a note: "Dear ___, you ___.", Peruzzi's reading, and the note (`?back=<ask>` writes back to the one who sent that note) |
 | `/notes` | your notes, each with where it has got to |
 | `/notes/:id` | a note already asked, to save, post or send |
 | `/tracklist` | the tracklist |
@@ -27,27 +27,28 @@ There's no front page: the site opens on a note, ready to write. Each screen has
 
 Back from a note's page is your notes, and back from your notes is a new note.
 
-- **The stage.** Peruzzi under a spotlight, seen from the back of the room: the beam swaying a little, the stage's front edge with its nameplate ("Peruzzi · live"), and the crowd in silhouette in front, a few phones up. The show opens with the room settling and a finger on the mic, twice ("Make some noise! Who's on your mind tonight?" when the stage has a voice). The crowd reacts out loud ("Awww.", "Ooooh.", laughter, a cheer) as the notes land.
+- **The stage.** Peruzzi in the light, seen from the back of the room: the rig's beams in magenta, gold and flame, the stage's front edge with an LED strip in the song's colours and its nameplate ("Peruzzi · live"), and the crowd in front: two rows of people seen from behind (afros, braids, a gele, a cap, a bun), shoulders and arms, a few phones up. The show opens with the room settling and a finger on the mic, twice ("Make some noise! Who's on your mind tonight?" when the stage has a voice). The crowd reacts out loud ("Awww.", "Ooooh.", laughter, a cheer) as the notes land.
+  - **On the beat.** The crowd sways left and right with the song: a lean one way on each beat and back the other way on the next, a little dip on the beat, the back row a touch behind the front, and the lights pulse with it. The beat is the song's own: `apps/web/src/lib/beat.ts` reads where the song is (102.97 beats a minute, the first at 0.277 s, measured from `inferno.mp3`; measure again if the file changes). Before the song starts, the crowd keeps its tempo, more gently; with reduced motion, it stands still.
 - **A note, in one sentence**, on the note's paper:
 
-  > Dear \_\_\_\_\_, I think you \_\_\_\_\_\_\_\_\_\_. Could this be love?
+  > Dear \_\_\_\_\_, you \_\_\_\_\_\_\_\_\_\_.
 
-  - Two blanks: who (a name or a role, 28 characters) and what they do (80, with a count). While they're empty, they suggest a note at a time (my crush, saved the last puff-puff for me on purpose).
-  - Under it, faint, the three boxes they'll answer in: "They tick one".
+  - Two blanks: who (a name or a role, 28 characters) and what they did (80, with a count). While they're empty, they suggest a note at a time, sweet or not (my crush, saved the last puff-puff for me on purpose; Tobi, left me on read for three days, then liked my story).
+  - Under it, Peruzzi's question as the note will have it ("Peruzzi asks: Could this be love?"), and, faint, the three boxes they'll answer in: "They tick one".
   - **Peruzzi, help me ask** at the foot of the screen hands it up. Return in the first blank goes on to the second; in the second it hands the note up.
   - With *read live* on (Admin → The stage), the note says Peruzzi could read the best notes out live.
   - Someone writing back starts with who already in: the one who sent them the note.
-  - While typing, the screen is fitted to what can be seen above the keyboard, as in the court: the stage slides up behind the top bar, all but its front edge and nameplate, before the keyboard is up.
-- **Peruzzi reads it.** "peruzzi is reading it", over three slips: the band (a guitar strumming), Peruzzi in the middle (the mic swaying), the crowd (clapping). Above them, typed out a line at a time, what the room is up to ("The crowd wants to know who your crush is…", "Checking it's love and not just December…"), for as long as the reading takes. Then each one's word is stamped on their slip, Peruzzi's last, "The room agrees.", the drummer's crash, the stamp, and the note. Peruzzi starts reading once the writer stops typing for a moment, so by the time they hand it up it's there or nearly.
-- **The note on paper**, under "Peruzzi Asked · Note 0007", the cover pinned to its corner:
-  - **"Dear Kemi,"** as its headline.
-  - **The line**: the writer's own words, tidied ("I think you always save me the window seat and pretend it was luck."), "I think you" lighter.
-  - **Peruzzi says**, in a box of its own, his one line to the person it's for ("Kemi, two hours in an ATM queue is a wedding vow."), with his stamp pressed into its corner: **Love** (nearly always), **Not love** (a complaint dressed as a love note), or **Huh?** (nothing to read).
-  - **Could this be love?** and the three boxes: Yes, No, and the third box.
-  - "Asked by Peruzzi" at its foot.
+  - While typing, the screen is fitted to what can be seen above the keyboard: the stage slides up behind the top bar, all but its front edge and nameplate, before the keyboard is up.
+- **Peruzzi reads it.** "peruzzi is reading it", over three slips: the band (a guitar strumming), Peruzzi in the middle (the mic swaying), the crowd (clapping). Above them, typed out a line at a time, what the room is up to ("The crowd wants to know who your crush is…", "Checking it's love and not just December…"), for as long as the reading takes. Then the lights come up on each of them, Peruzzi's last ("Peruzzi has it."), the drummer's crash, and the note. Peruzzi starts reading once the writer stops typing for a moment, so by the time they hand it up it's there or nearly.
+- **The note on paper**, warm white with the song's colours along its top edge, under "Note 0007 · Two Hours at the ATM", the cover pinned to its corner:
+  - **"Dear Kemi,"** as its headline, her name in the song's colours.
+  - **What she did**, as Peruzzi tells it, to her: "You stood in an ATM queue with me for two hours like it was our first date."
+  - **Peruzzi asks: Could this be love?** in a box of its own, in the song's colours. That's all it says.
+  - **The three boxes**: Yes, No, and the third box.
+  - **"Inferno by Peruzzi"** in its bottom right corner.
 
-  It's the story card's own paper: the page draws it with the card's code at the phone's width, so what's on screen is exactly what gets posted. Only the stamp and the tick are drawn apart, to land on it. What it says is also there as text for screen readers.
-- **The cards.** The story card (1080×1920, to post) and the square (for link previews): "PERUZZI ASKED" over the paper, and under it the way in, "Who's on your mind?" and the address, underlined like a link (the story adds "INFERNO · PERUZZI"). Once the note is answered, the cards carry the tick.
+  No stamp, and no question at the foot: Peruzzi's box asks it. It's the story card's own paper: the page draws it with the card's code at the phone's width, so what's on screen is exactly what gets posted. Only the tick is drawn apart, to land on it. What it says is also there as text for screen readers.
+- **The cards.** The story card (1080×1920, to post) and the square (for link previews): the night at the show behind it, lit in magenta and flame with two beams coming down, "PERUZZI ASKS" over the paper, and under it the way in, "Who's on your mind?" and the address, underlined in the song's colours. Once the note is answered, the cards carry the tick.
 - **Next steps.** The note is in your notes the moment it lands. Right under the paper, "Save image". Then three numbered steps:
   1. **Let Peruzzi ask:** "Send it to Kemi". Only she can tick it.
   2. **Post it:** "Put it on your story". The phone's share sheet with the story card (without one, it copies the note's link).
@@ -58,7 +59,7 @@ Back from a note's page is your notes, and back from your notes is a new note.
   - **Send on WhatsApp**: "Kemi, Peruzzi asked you something. It's from Adé, and only you can answer it:" and the link. The link is the key: whoever opens it can tick the answer, once.
   - **Share the link**, the same message anywhere else.
   - **Have it emailed** (once email is set up): the writer confirms their own address with a six-digit code first, so nobody can send notes in someone else's name.
-- **The answer.** The person asked arrives on the stage: "A note from Adé", "Kemi, peruzzi asked you something", the note still folded. **Open it** (the tap that starts the song): the spotlight swings off the stage and lands on them, Peruzzi says "Somebody here has a question for you.", and the note comes down with his stamp. They tick one box, in red biro. The room answers with them (a cheer, an "aww", a laugh), and Peruzzi says his piece: "I knew it.", "Respect.", or "Hmm. I don't believe you." Then: Save image, and next steps of their own (tell the writer, on WhatsApp, with the note's link; post it; the song), **Write Adé back**, and **Write your own note**.
+- **The answer.** The person asked arrives on the stage: "A note from Adé", "Kemi, peruzzi asked you something", the note still folded. **Open it** (the tap that starts the song): the spotlight swings off the stage and lands on them, Peruzzi says "Somebody here has a question for you.", and the note comes down. They tick one box, in red biro. The room answers with them (a cheer, an "aww", a laugh), and Peruzzi says his piece: "I knew it.", "Respect.", or "Hmm. I don't believe you." Then: Save image, and next steps of their own (tell the writer, on WhatsApp, with the note's link; post it; the song), **Write Adé back**, and **Write your own note**.
   - One answer per note: the first tick counts, even if two phones tick at once, and it stays. Coming back to the note shows the answer.
   - Writing back opens a notebook of its own that knows what it answers, so Peruzzi can play off it. "Write your own note" carries on in the notebook already on that phone.
 - **Your notes.** Every note so far, newest first, each with where it has got to: "Sent. Kemi hasn't opened it yet.", "Seen 9:26am. No tick yet.", "Kemi ticked Yes." While your notes are on screen they keep up by themselves (every 15 seconds, and whenever the page comes back into view). A note that described real harm isn't among them.
@@ -73,9 +74,9 @@ Back from a note's page is your notes, and back from your notes is a new note.
 WhatsApp and similar apps read the link preview from the API, which then sends the person on into the site.
 
 **Admin (`/admin`):** one shared password, `ADMIN_PASSWORD`, traded at sign-in for a session that lasts 12 hours (the tab never keeps the password). Ten wrong passwords through one connection in a quarter of an hour and it gets no more tries until the quarter has passed.
-- **Insights.** Totals only: notes, sent, seen, answered and how many ticked Yes, written back, the way from the stage to sharing, the answers, Peruzzi's stamps, who the notes are for, notes per day, the busiest hours, cities, and the AI's cost.
+- **Insights.** Totals only: notes, sent, seen, answered and how many ticked Yes, written back, the way from the stage to sharing, the answers, what the notes were about (something sweet, something they shouldn't have, nonsense), who the notes are for, notes per day, the busiest hours, cities, and the AI's cost.
 - **Costs.** What the site has cost to run, what's been paid towards it, and what's still to pay: month by month, bill by bill, the AI as measured from every reading, the voice's credits, and projections (a month at 1,000, 10,000, 50,000 and 250,000 notes, and a calculator, with the voice reading every note or nothing). Bills and payments are set here.
-- **Notes.** Every note as written, what Peruzzi said, where it was sent and how it was answered, with flags (contact details taken out, a prepared line, the AI too slow, danger words) and hiding a note from its public link.
+- **Notes.** Every note as written, what Peruzzi made of it, where it was sent and how it was answered, with flags (contact details taken out, a prepared line, the AI too slow, danger words) and hiding a note from its public link.
 - **The stage.** Open or paused (notes already sent can still be opened and answered while it's paused), who reads Peruzzi's words, the name on the stage, Peruzzi's humour (sweet, cheeky, spicy), *read live*, the limits, the song's volume, and the help text.
 - **Site.** The artist, the song, the streaming link, the handle, and the footnotes (the concept-demo note).
 - **Emails.** Edit the words, with a preview and a test send.
@@ -104,23 +105,22 @@ npm run web                                   # http://localhost:5173 (proxies /
 
 **Character.**
 - Peruzzi at the mic at his own show: the smoothest man in the building and the writer's biggest supporter, their wingman with a microphone.
-- Whatever they noticed is proof of love, blown up a size: an ATM queue becomes a wedding vow, a saved puff-puff a proposal. Warm, cheeky, playful: wit, never mush (no "soulmate", no butterflies), with everyday Nigerian life where it makes the line land and at most a touch of Pidgin.
-- He talks to the person the note is for, by name, never "he" or "she" about anyone.
+- Whatever they did, sweet or annoying, he tells it back bigger and funnier: an ATM queue becomes a first date, a saved puff-puff a state secret, three days on read a national holiday. The laugh is in how it's told: one exaggerated detail, comparison or twist. Warm, cheeky, playful: wit, never mush (no "soulmate", no butterflies), with everyday Nigerian life where it makes the line land and at most a touch of Pidgin.
+- He talks to the person the note is for: it's "you", never "he" or "she" about anyone.
 - He may speak as himself at the mic, but says nothing about his own life, his relationships or his songs. The admin's humour setting comes with each note.
 
 **The reading**, held to a schema (`output_config.format`):
-- the kind: love nearly always (the clumsy, the tiny and the strange are love too); not love only for a complaint dressed as a love note, called playfully ("Emeka, that's not love. That's a data plan."); nonsense when there's nothing to read; serious (below);
+- the kind: something sweet (love), something they shouldn't have (teased playfully, about what they did and never who they are), nonsense when there's nothing to read, or serious (below). It sets how the crowd takes the note (an "aww", a laugh) and the admin's insights; it isn't on the note;
 - who it's to, as the note says it after "Dear" ("my crush" → "Crush"), and whether that's a thing that can never read it;
 - the note's title, like a track on an album ("Last Puff-Puff"), for your notes, the tracklist and the emails;
-- the writer's line, tidied: their words and their meaning, spelling and length mended, nothing made funnier or sweeter than they wrote it;
-- Peruzzi's line, 6 to 14 words, about the exact thing in the note;
+- what they did, told back to them, funnier: one short sentence starting "You", 6 to 16 words, keeping the facts and the writer's side of it ("You saved me…"), so a stranger who reads only this line gets the story;
 - the third box: the excuse the person asked would give for exactly this, in their own voice ("I was also withdrawing."). For a thing, what the thing would say ("I'm just a bed.").
 
-The server holds the lengths to it (two short sentences at most for Peruzzi's line, one sentence for the writer's), whatever comes back.
+The server holds the line to it (one sentence, starting "You", never "I think you"), whatever comes back.
 
 **Peruzzi never:** uses full names, surnames or handles; jokes about bodies, tribe, religion, politics, sexuality, money troubles and the like; turns sexual, whatever the note says (it has to be sweet enough to read out at a family show); swears, threatens or is cruel; encourages snooping, stalking, or chasing someone who has said no; quotes lyrics or invents facts about himself.
 
-**Serious notes.** Abuse, violence, threats, sexual assault or coercion, stalking, a child at risk, someone in danger, self-harm: Peruzzi steps out of character, there's no note and no card, and the screen shows where to get help. Exaggeration in a funny note ("I think you'd kill for my jollof") isn't serious. If the AI is down and the note has words that can signal real danger, it gets help rather than a prepared line.
+**Serious notes.** Abuse, violence, threats, sexual assault or coercion, stalking, a child at risk, someone in danger, self-harm: Peruzzi steps out of character, there's no note and no card, and the screen shows where to get help. Exaggeration in a funny note ("you'd kill for my jollof") isn't serious. If the AI is down and the note has words that can signal real danger, it gets help rather than a prepared line.
 
 **Speed.**
 - **Read while they type.** Once both blanks are filled and the writer stops for a moment, the phone asks Peruzzi to start (`POST /api/notebooks/:id/draft`). Handing the note up picks up that reading if the words are the same (case, spacing and punctuation aside); changed words get a fresh one. Only new words get a draft, a notebook's start three seconds apart at most, twenty an hour, and none for a note the day's limits wouldn't take. A draft nobody hands up is counted on the Costs page.
@@ -137,7 +137,7 @@ The server holds the lengths to it (two short sentences at most for Peruzzi's li
 
 **Input cleaning and privacy.**
 - Phone numbers, emails, links and handles are taken out before Peruzzi sees anything.
-- The note as typed is kept only for the admin's moderation and wiped after 30 days. Public pages, cards, emails and the voice carry only the note as Peruzzi tidied it and his own words.
+- The note as typed is kept only for the admin's moderation and wiped after 30 days. Public pages, cards and emails carry the line as Peruzzi told it (or, with a prepared reading, as written, contact details taken out).
 
 To hear Peruzzi without the site:
 
@@ -149,11 +149,11 @@ npm run peruzzi:try -w apps/api     # eleven sample notes, timed (set PERUZZI_MO
 
 ## Sound
 
-Everything goes through Web Audio gain nodes, as in the court, because iPhones ignore an audio element's volume set from code.
+Everything goes through Web Audio gain nodes, because iPhones ignore an audio element's volume set from code.
 
 - **The song** (`apps/web/public/media/audio/inferno.mp3`) loops underneath at 25% (the admin can change it), and steps down whenever the stage makes a sound or speaks. A phone starts sound only from a tap: the first tap on the stage starts it, and on a note sent to you, "Open it" does.
 - **Leaving and coming back.** Leaving the page cuts all sound at once; coming back carries the song on where it was. After a tap on "Listen to Inferno", the song waits for a small pill instead, so it doesn't cut into the song playing in another app. It plays on under the share sheet.
-- **The stage's sounds** are synthesised in `apps/web/src/lib/sound.ts`, so there are no files to load: a finger on the mic, the drumroll while Peruzzi reads, paper as each word is given, the drummer's crash, the stamp, the tick, whooshes, the room's murmur, and a chime for love.
+- **The stage's sounds** are synthesised in `apps/web/src/lib/sound.ts`, so there are no files to load: a finger on the mic, the drumroll while Peruzzi reads, a swish as each light comes up, the drummer's crash, the tick, whooshes, the room's murmur, and a chime for something sweet.
 - **The crowd's voices** (an "ooh", an "aww", a laugh, a cheer, a murmur). With `ELEVENLABS_API_KEY` on the server, the API makes each one with ElevenLabs' sound effects the first time a phone needs it and keeps it in the database. Admin → Voice → *The crowd's sounds* plays each one, makes it again, or takes your own recording instead. Without a key or an upload, the crowd only murmurs.
 - **The mute button**, at the top of every screen, is the one sound control.
 
@@ -168,14 +168,14 @@ Everything goes through Web Audio gain nodes, as in the court, because iPhones i
 - **Peruzzi's recorded lines.** Peruzzi records the fixed moments ("Make some noise! Who's on your mind tonight?", "Somebody here has a question for you.", "I knew it.", "Respect.", "Hmm. I don't believe you."), uploaded in Admin → Voice. The MC reads the rest.
 - **Peruzzi's AI voice.** Uses `ELEVENLABS_VOICE_ID` and shows a visible label. **Only with Peruzzi's written consent, a contract covering its use, and the label's approval.**
 
-The voice reads Peruzzi's line on each note and "Could this be love?". It only ever reads Peruzzi's own words, never what anyone typed. Each reading is stored, so the same words in the same voice are paid for once.
+The voice reads each note: their name, what they did as Peruzzi told it, and "Could this be love?". A prepared reading keeps the writer's own words, so then it reads only the name and the question: it never reads what anyone typed. Each reading is stored, so the same words in the same voice are paid for once.
 
 ## Email
 
 Set `RESEND_API_KEY` and `MAIL_FROM`, an address on a domain verified in Resend. The email options appear on the site once both are set. Four emails, all editable in Admin → Emails:
 
 - **The code.** A writer proves their address before the site emails a note for them.
-- **The note.** "Adé asked Peruzzi to ask you something": the note with Peruzzi's line and the three empty boxes, "Open the note and answer", "Write Adé a note back", and the song. It names the writer and their masked address.
+- **The note.** "Adé asked Peruzzi to ask you something": the note (what they did, Peruzzi's question, the three empty boxes and the song), "Open the note and answer", "Write Adé a note back", and the song. It names the writer and their masked address.
 - **The answer.** When an emailed note is answered, its writer gets the note back with the box ticked.
 - **The tracklist.**
 
@@ -209,11 +209,11 @@ Measured on a mid-range phone over slow 4G (Lighthouse's mobile setting), from t
 
 | Page | Usable in | JavaScript |
 |---|---|---|
-| The stage, ready to write | 2.5 s | 149 KB |
-| Your notes | 2.3 s | 149 KB |
-| A note sent to you, ready to open | 2.6 s | 149 KB |
-| A shared note, its paper drawn | 4.4 s | 149 KB |
-| A note on your notes, its paper drawn | 5.6 s | 149 KB |
+| The stage, ready to write | 2.6 s | 149 KB |
+| Your notes | 2.2 s | 149 KB |
+| A note sent to you, ready to open | 2.7 s | 149 KB |
+| A shared note, its paper drawn | 4.7 s | 149 KB |
+| A note on your notes, its paper drawn | 5.4 s | 149 KB |
 
 The pages with a note on them wait for the paper's fonts and the cover pinned to it before drawing it. The stage asks the server for its settings and the notebook at once, as the page starts loading; the stage photo and the headings' fonts are preloaded; and the settings, the same for everyone, are cached for a few seconds.
 
@@ -228,14 +228,14 @@ npm i -D playwright        # once, if it isn't installed
 npm run e2e                # or one at a time: node apps/web/scripts/stage.e2e.mjs | send.e2e.mjs | admin.e2e.mjs
 ```
 
-- **stage.** The site opening straight on a note, the stage and its nameplate, the sentence and its two blanks, the count and its limit, an empty note turned back, the read-live line, the button staying at the foot of the screen, the song (the first tap, leaving and coming back, back from streaming), the reading (the band, Peruzzi and the crowd, "The room agrees."), the note (its headline, Peruzzi's line and stamp, the three boxes), next steps in order, the story card, posting, the square card and the link preview, the public page (never the number typed), your notes and the back buttons, the tracklist and its email, a note to a thing, and a note describing real harm getting help.
-- **send.** The WhatsApp link and its folded preview, the note marked sent, the person asked (on a phone with a notebook of its own) arriving, the note folded until opened, the writer seeing it seen, the three boxes, the tick and Peruzzi's reply, their next steps, the writer's notes catching up by themselves, only the first tick counting, the cards and previews showing the answer, writing back, and by email: the code, the note, the weekly limit, the answer emailed back to the writer, and the opt-out.
+- **stage.** The site opening straight on a note, the stage and its nameplate, the sentence and its two blanks, the count and its limit, an empty note turned back, the read-live line, the button staying at the foot of the screen, the song (the first tap, leaving and coming back, back from streaming), the reading (the band, Peruzzi and the crowd, the lights coming up), the note (its headline, what they did as Peruzzi tells it, his question, no stamp, the three boxes, the song in its corner), next steps in order, the story card, posting, the square card and the link preview, the public page (never the number typed), your notes and the back buttons, the tracklist and its email, a note to a thing, and a note describing real harm getting help.
+- **send.** The WhatsApp link and its folded preview, the note marked sent, the person asked (on a phone with a notebook of its own) arriving, the note folded until opened, the writer seeing it seen, the three boxes, the tick and Peruzzi's reply, their next steps, the writer's notes catching up by themselves, only the first tick counting, the cards and previews showing the answer, writing back, and by email: the code, the note (what they did, Peruzzi's question, the boxes, the song), the weekly limit, the answer emailed back to the writer, and the opt-out.
 - **admin.** Signing in, the insights, the costs and a projection, the stage's settings, pausing the stage (with notes already sent still answerable), and the notes, with hiding one from its public link.
 
 ## Before launch
 
 - **The official assets.** The cover (`apps/web/public/media/img/cover-*`), the stage photo (`stage-*`), the link previews (`og.jpg`, `og-ask.jpg`, made from `/lab/og` on the dev server), the icon and the song (`media/audio/inferno.mp3`, taken from the snippet) are stand-ins. Replace them with the official ones, keeping the names.
-- **The song's title and streaming link.** "Inferno" is assumed. Both are set in Admin → Site, and the streaming link is a Spotify search until there's a real one.
+- **The streaming link.** Set in Admin → Site: a Spotify search until there's a real one.
 - **Peruzzi's AI lines.** Run `peruzzi:try` with a key and read what he says before anyone else does.
 - **Read live** stays off until Peruzzi's team agrees to read notes out.
 

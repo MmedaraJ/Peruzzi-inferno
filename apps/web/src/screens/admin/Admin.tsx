@@ -20,7 +20,7 @@ export default function Admin() {
   const [tab, setTab] = useState<Tab>(() => (TABS.some(([k]) => k === location.hash.slice(1)) ? location.hash.slice(1) as Tab : 'insights'));
   const [cfg, setCfg] = useState<{ values: any; defaults: any; status: any } | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  useEffect(() => { document.title = 'Admin · Peruzzi Asked'; }, []);
+  useEffect(() => { document.title = 'Admin · Peruzzi Asks'; }, []);
   const signOut = () => { try { sessionStorage.removeItem(KEY); } catch {} setToken(null); };
   // any admin call answered 401 (the session ran out, or the password changed): back to the sign-in form
   useEffect(() => { whenSignedOut(signOut); return () => whenSignedOut(null); }, []);
@@ -44,7 +44,7 @@ export default function Admin() {
       </header>
       <main className="mx-auto max-w-6xl px-4 py-6">
         {cfg && <Status s={cfg.status} />}
-        {err && <p className="mb-4 border border-stamp/50 px-3 py-2 text-[#f0c4c4]">{err}</p>}
+        {err && <p className="mb-4 border border-fire/50 px-3 py-2 text-[#f0c4c4]">{err}</p>}
         {!cfg ? <p className="text-bone/60">Loading…</p> : (
           <>
             {tab === 'insights' && <Insights token={token} />}
@@ -66,12 +66,12 @@ function Login({ onIn }: { onIn: (token: string) => void }) {
   const [p, setP] = useState(''); const [err, setErr] = useState(''); const [busy, setBusy] = useState(false);
   const go = async () => { setBusy(true); setErr(''); try { onIn((await admin.login(p)).token); } catch (e) { setErr((e as ApiError).status === 401 ? 'That password isn’t right.' : (e as ApiError).message); } finally { setBusy(false); } };
   return (
-    <div className="concrete flex min-h-dvh items-center justify-center px-6">
+    <div className="night flex min-h-dvh items-center justify-center px-6">
       <form className="w-full max-w-sm" onSubmit={(e) => { e.preventDefault(); go(); }}>
         <div className="flex justify-center"><Wordmark size="lg" className="text-bone" /></div>
         <p className="caps mt-1 text-center text-[11px] text-bone/55">Admin</p>
         <input type="password" autoFocus value={p} onChange={(e) => setP(e.target.value)} placeholder="Password" className="mt-8 min-h-12 w-full border border-bone/25 bg-black/30 px-3.5 text-[17px] focus:border-bone/60 focus:outline-none" />
-        {err && <p className="mt-2 text-[14.5px] text-[#e7a3a3]">{err}</p>}
+        {err && <p className="mt-2 text-[14.5px] text-[#ff9aae]">{err}</p>}
         <button disabled={busy || !p} className="mt-4 min-h-12 w-full bg-bone font-semibold text-ink disabled:opacity-40">{busy ? 'Checking…' : 'Sign in'}</button>
       </form>
     </div>

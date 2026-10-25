@@ -2,7 +2,7 @@ import { ArrowUpRightIcon } from '@phosphor-icons/react';
 import { StageConfig } from '../../lib/api';
 import { Button } from '../../components/ui';
 
-/** Where to get real help. Out of character: no jokes, no stamp. */
+/** Where to get real help. Out of character: no jokes, no note. */
 export function HelpPanel({ help, line }: { help: StageConfig['help']; line?: string }) {
   return (
     <div className="pr-6">

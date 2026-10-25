@@ -24,7 +24,7 @@ const ROOM: Record<AnswerT, Reaction> = { yes: 'cheer', no: 'aww', escape: 'laug
 export const SAYS: Record<AnswerT, string> = { yes: 'I knew it.', no: 'Respect.', escape: 'Hmm. I don’t believe you.' };
 
 /** The note, for the person it was sent to. They arrive on the stage, with who it's from; one tap opens it (and starts
- *  the song): the spotlight swings off the stage and lands on them, the note comes down with Peruzzi's stamp on it,
+ *  the song): the spotlight swings off the stage and lands on them, the note comes down with Peruzzi's question on it,
  *  and they tick one box. The room answers with them, Peruzzi says his piece, and the ticked note is theirs to send
  *  back, post, or answer with a note of their own. Coming back to a note already answered shows the answer. */
 export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
@@ -56,8 +56,8 @@ export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
   const sent = useRef(false);
   useEffect(() => {
     if (!ask || !answer) return;
-    const d = { ...paperOf({ ...ask.note, answer }, cfg.nameplate), site: location.host, song: cfg.song, artist: cfg.artist };
-    noteCard(d, 'story').then((c) => toBlob(c, 0.9)).then((b) => setCard(new File([b], `peruzzi-asked-${ask.note.noteNo}-answered.jpg`, { type: 'image/jpeg' }))).catch(() => {});
+    const d = { ...paperOf({ ...ask.note, answer }, cfg), site: location.host };
+    noteCard(d, 'story').then((c) => toBlob(c, 0.9)).then((b) => setCard(new File([b], `peruzzi-asks-${ask.note.noteNo}-answered.jpg`, { type: 'image/jpeg' }))).catch(() => {});
     if (!sent.current && !store.answered()[`card:${code}`]) {
       sent.current = true;
       noteCard(d, 'square').then((c) => toBlob(c, 0.86)).then((b) => api.saveCard('answer', code, '', b)).then(() => store.setAnswered(`card:${code}`, '1')).catch(() => {});
@@ -76,7 +76,7 @@ export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
     if (voiceOn) sound.speak(api.lineUrl('found', cfg.voice.v)); else stage.current?.say(`${cfg.nameplate}: “Somebody here has a question for you.”`, 2600);
     await sleep(900);
     if (!mounted.current) return;
-    sound.play('stamp', { strength: 0.9 });
+    sound.play('paper', { strength: 0.8 });
     await sleep(500);
     stage.current?.react('ooh');
     await sleep(900);
@@ -110,7 +110,7 @@ export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
   const size = useRestingSize();
   const stageH = Math.round(Math.min(size.h * 0.42, Math.max(200, Math.min(size.w, 520) / 1.45)));
   if (gone) return (
-    <div className="concrete flex min-h-dvh flex-col items-center justify-center px-8 text-center">
+    <div className="night flex min-h-dvh flex-col items-center justify-center px-8 text-center">
       <h1 className="display text-[32px]">this note is gone</h1>
       <p className="mt-3 max-w-sm text-bone/70">{gone}</p>
       <Button className="mt-8 w-full max-w-xs" onClick={onWrite}>Write your own note</Button>
@@ -142,13 +142,13 @@ export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
                     <p className="mt-2 text-[17px] leading-snug">{ask.sender} wrote you a note, and {cfg.nameplate} is asking it for them.</p>
                     <p className="caps mt-2 text-[10px] text-paper-ink/55">One tick only · Take your time</p>
                   </div>
-                  <div className="dock-bottom sticky bottom-0 z-10 -mx-4 mt-6 bg-gradient-to-t from-[#0e0d0b] from-[62%] to-transparent px-4 pb-[max(4px,env(safe-area-inset-bottom))] pt-7">
+                  <div className="dock-bottom sticky bottom-0 z-10 -mx-4 mt-6 bg-gradient-to-t from-[#12050f] from-[62%] to-transparent px-4 pb-[max(4px,env(safe-area-inset-bottom))] pt-7">
                     <Button className="w-full" onClick={open}>Open it</Button>
                   </div>
                 </motion.div>
               ) : (
                 <motion.div key="note" className="mt-5" initial={phase === 'open' ? { y: 70, opacity: 0 } : false} animate={{ y: 0, opacity: 1 }} transition={{ delay: phase === 'open' ? 1.5 : 0, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-                  <NotePaper note={paperOf(ask.note, cfg.nameplate)} answer={answer} land={phase === 'open'} onTick={tickable && !answer ? tick : undefined} />
+                  <NotePaper note={paperOf(ask.note, cfg)} answer={answer} onTick={tickable && !answer ? tick : undefined} />
                   <AnimatePresence>
                     {phase === 'open' && !answer && tickable && (
                       <motion.p key="hint" className="caps mt-3 text-center text-[11px] text-bone/70" initial={{ opacity: 0 }} animate={{ opacity: [0.5, 1, 0.5] }} exit={{ opacity: 0, transition: { duration: 0.2 } }} transition={{ duration: 1.8, repeat: Infinity }}>
@@ -156,22 +156,22 @@ export function Answer({ cfg, code, onBack, onWriteBack, onWrite }: {
                       </motion.p>
                     )}
                   </AnimatePresence>
-                  {err && <p role="alert" className="mt-3 text-center text-[15px] text-[#e7a3a3]">{err}</p>}
+                  {err && <p role="alert" className="mt-3 text-center text-[15px] text-[#ff9aae]">{err}</p>}
                   {phase === 'answered' && answer && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                       <button onClick={async () => { if (!card) { setToast('One moment, drawing it…'); return; } sound.keepThrough(); const r = await saveFile(card); track('answer_save', { how: r }); }}
-                        className="mt-3 flex min-h-[50px] w-full items-center justify-center gap-2 border border-bone/20 px-2 text-[15px] text-bone/85 hover:border-bone/50"><DownloadSimpleIcon size={18} />Save image</button>
+                        className="mt-3 flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl border border-bone/20 px-2 text-[15px] text-bone/85 hover:border-bone/50"><DownloadSimpleIcon size={18} />Save image</button>
                       <section aria-label="Next steps" className="mt-8">
                         <p className="caps text-[11px] text-bone/55">Next steps</p>
                         <p className="mt-1.5 text-[17px] leading-snug text-bone/85">{ask.sender} can see your answer now.</p>
                         <ol className="mt-3.5 flex flex-col gap-2.5">
                           <li><a href={`https://wa.me/?text=${encodeURIComponent(`${ask.sender}, I answered your note. ${noteUrl}`)}`} target="_blank" rel="noreferrer" onClick={() => { sound.keepThrough(); track('answer_send_back'); }}
-                            className="flex min-h-[64px] items-center gap-3.5 bg-bone py-2.5 pl-3 pr-4 text-ink shadow-[0_12px_32px_-12px_rgba(236,229,216,0.45)]">
-                            <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-ink text-bone"><WhatsappLogoIcon size={20} weight="fill" /></span>
-                            <span className="min-w-0 flex-1"><span className="caps block text-[10px] text-ink/60">1 · Tell {ask.sender}</span><span className="mt-0.5 block text-[17.5px] font-semibold leading-snug">Send your answer back</span></span>
+                            className="fire flex min-h-[64px] items-center gap-3.5 rounded-xl py-2.5 pl-3 pr-4 text-white shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)]">
+                            <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full bg-white/20 text-white"><WhatsappLogoIcon size={20} weight="fill" /></span>
+                            <span className="min-w-0 flex-1"><span className="caps block text-[10px] text-white/85">1 · Tell {ask.sender}</span><span className="mt-0.5 block text-[17.5px] font-semibold leading-snug">Send your answer back</span></span>
                           </a></li>
                           <li><button onClick={async () => { if (!card) { setToast('One moment, drawing it…'); return; } sound.keepThrough(); const r = await shareFile(card, shareText(answer), noteUrl); track('answer_share', { how: r }); if (r === 'copied') setToast('Link copied.'); }}
-                            className="flex min-h-[64px] w-full items-center gap-3.5 border border-bone/30 py-2.5 pl-3 pr-4 text-left text-bone hover:border-bone/60">
+                            className="flex min-h-[64px] w-full items-center gap-3.5 rounded-xl border border-bone/30 py-2.5 pl-3 pr-4 text-left text-bone hover:border-bone/60">
                             <span className="flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-bone/35"><ShareNetworkIcon size={19} weight="bold" /></span>
                             <span className="min-w-0 flex-1"><span className="caps block text-[10px] text-bone/55">2 · Post it</span><span className="mt-0.5 block text-[17.5px] font-semibold leading-snug">Put it on your story</span></span>
                           </button></li>

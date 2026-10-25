@@ -27,12 +27,12 @@ export async function withStage(patch) {
 }
 export const outbox = () => getJson('/api/admin/outbox');
 export const jpegSize = (buf) => { for (let i = 2; i < buf.length;) { if (buf[i] !== 0xff) return null; const m = buf[i + 1], len = buf.readUInt16BE(i + 2); if (m >= 0xc0 && m <= 0xc2) return { h: buf.readUInt16BE(i + 5), w: buf.readUInt16BE(i + 7) }; i += 2 + len; } return null; };
-/** "Dear <who>, I think you <what>. Could this be love?": fills the blanks (a note written back has the first filled
+/** "Dear <who>, you <what>.": fills the blanks (a note written back has the first filled
  *  already) and hands it up. */
 export async function write(p, who, what) {
   const box = p.getByLabel('Who it’s for'); await box.waitFor({ timeout: 60000 });
   if (who != null) await box.fill(who);
-  await p.getByLabel('What they do').fill(what);
+  await p.getByLabel('What they did').fill(what);
   await p.getByRole('button', { name: /help me ask/ }).click();
 }
 /** Waits for Peruzzi's reading: the note, or Peruzzi putting the mic down. */

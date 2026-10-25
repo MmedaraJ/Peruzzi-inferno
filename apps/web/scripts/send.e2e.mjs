@@ -39,7 +39,7 @@ try {
   const ask = link[2];
   const prev = await (await fetch(`${A}/a/${ask}`)).text();
   check('the link previews folded: who it’s for, who it’s from, and the question', prev.includes('og:title" content="Kemi, Peruzzi asked you something"') && prev.includes('A note from Adé') && prev.includes('/media/img/og-ask.jpg'));
-  check('…what the note says stays out of the preview: it’s for them to open', !prev.includes(k.line) && !prev.includes(k.peruzzi));
+  check('…what the note says stays out of the preview: it’s for them to open', !prev.includes(k.line) && !prev.includes(k.escape));
   check('…and a tap on it goes on to the note', prev.includes(`/answer/${ask}`));
   await p.screenshot({ path: `${SHOTS}/send-how.png` });
   await p.keyboard.press('Escape'); await sheet.waitFor({ state: 'hidden' });
@@ -58,7 +58,7 @@ try {
   check('the writer sees it’s been opened', await p.getByText(/^Seen \d{1,2}:\d{2}[ap]m\. No tick yet\.$/).first().waitFor({ timeout: 8000 }).then(() => true, () => false));
   await q.getByRole('button', { name: 'Open it' }).click();
   const boxes = q.locator('[data-choice]'); await boxes.first().waitFor({ timeout: 12000 });
-  check('opened: the note comes down with three boxes to tick', await boxes.count() === 3 && await q.getByText('Tick one box on the note').isVisible() && await q.getByText(k.peruzzi).count() === 1);
+  check('opened: the note comes down with three boxes to tick', await boxes.count() === 3 && await q.getByText('Tick one box on the note').isVisible() && await q.getByText(k.line).count() === 1 && await q.getByText('Peruzzi asks: Could this be love?').count() === 1);
   check('…the third box is Peruzzi’s way out', (await boxes.nth(2).getAttribute('aria-label')) === `Tick: ${k.escape}`);
   await q.screenshot({ path: `${SHOTS}/send-open.png` });
   await q.locator('[data-choice="yes"]').click();
@@ -116,7 +116,8 @@ try {
   await s2.getByText(/^Delivered\./).waitFor({ timeout: 8000 });
   const mail = (await outbox()).find((m) => m.to === rec);
   check('the note goes out from the named writer', !!mail && mail.subject === 'Adé asked Peruzzi to ask you something' && /Adé \(a\*+@example\.com\) asked us to deliver this note/.test(mail.text), mail?.subject);
-  check('…with the note on it, Peruzzi’s line and three empty boxes', !!mail && mail.text.includes('Dear Bayo,') && mail.text.includes(`Peruzzi says: ${k2.peruzzi}`) && mail.text.includes('[ ] Yes') && mail.text.includes('[ ] No') && mail.text.includes(`[ ] ${k2.escape}`));
+  check('…with the note on it: what they did, Peruzzi’s question, three empty boxes and the song', !!mail && mail.text.includes('Dear Bayo,') && mail.text.includes(k2.line) && mail.text.includes('Peruzzi asks: Could this be love?')
+    && !/^Could this be love\?$/m.test(mail.text) && mail.text.includes('[ ] Yes') && mail.text.includes('[ ] No') && mail.text.includes(`[ ] ${k2.escape}`) && mail.text.includes('Inferno by Peruzzi'));
   check('…the way to answer, to write back, the song, and the opt-out', !!mail && /Open the note and answer: \S+\/a\/\w+/.test(mail.text) && /Write Adé a note back: \S+\/\?back=\w+/.test(mail.text)
     && /Listen to Inferno by Peruzzi: https?:\/\//.test(mail.text) && /Never send me notes again: \S+\/api\/u\/block\//.test(mail.text));
   check('…and nothing of their address in it', !!mail && !mail.text.includes(rec) && !mail.html.includes(rec));

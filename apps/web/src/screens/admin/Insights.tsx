@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { admin } from '../../lib/api';
 import { Section } from './kit';
 
-const KINDS: Record<string, string> = { love: 'Love', not_love: 'Not love', nonsense: 'Nonsense' };
+const KINDS: Record<string, string> = { love: 'Something sweet', not_love: 'Something they shouldn’t have', nonsense: 'Nonsense' };
 const ANSWERS: Record<string, string> = { yes: 'Yes', no: 'No', escape: 'The third box' };
 const n = (x: number) => (x ?? 0).toLocaleString();
 
@@ -38,7 +38,7 @@ export function Insights({ token }: { token: string }) {
         <Section title="The answers" note="What the people asked ticked">
           {r.answers.length ? r.answers.map((v: any) => <Bar key={v.answer} label={ANSWERS[v.answer] || v.answer} value={v.n} max={r.answers[0].n} />) : <Empty />}
         </Section>
-        <Section title="Peruzzi’s stamps">
+        <Section title="What the notes were about" note="As Peruzzi read them">
           {r.kinds.length ? r.kinds.map((v: any) => <Bar key={v.kind} label={KINDS[v.kind] || v.kind} value={v.n} max={r.kinds[0].n} />) : <Empty />}
         </Section>
         <Section title="Who the notes are for">{r.dears.length ? r.dears.map((c: any) => <Bar key={c.label} label={c.label} value={c.n} max={r.dears[0].n} />) : <Empty />}</Section>

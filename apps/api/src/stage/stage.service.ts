@@ -14,16 +14,14 @@ import { VoiceService } from './voice.service';
 
 export class TooMany extends HttpException { constructor(message: string, public reason: string) { super({ message, reason }, HttpStatus.TOO_MANY_REQUESTS); } }
 
-/** What the writer says: "Dear <who>, I think you <what>. Could this be love?" */
+/** What the writer says: "Dear <who>, you <what>." */
 export interface WriteDto { who: string; what: string; name?: string }
 export type Answer = 'yes' | 'no' | 'escape';
 export const ANSWERS: Answer[] = ['yes', 'no', 'escape'];
-/** what the stamp on a note says, by kind */
-export const STAMPS: Record<string, string> = { love: 'Love', not_love: 'Not love', nonsense: 'Huh?' };
 /** Every column but the card images (JPEGs of up to 3 MB): only the endpoints that serve a card read them. */
 export const NOTE_COLUMNS = {
   id: true, seq: true, code: true, notebookId: true, n: true, dear: true, thing: true, title: true, statement: true, status: true, kind: true,
-  line: true, peruzzi: true, escape: true, answer: true, answeredAt: true, seenAt: true, fallback: true, flags: true, hidden: true,
+  line: true, escape: true, answer: true, answeredAt: true, seenAt: true, fallback: true, flags: true, hidden: true,
   model: true, tokensIn: true, tokensOut: true, cacheRead: true, cacheWrite: true, ms: true, createdAt: true, askedAt: true,
 } as const satisfies Prisma.NoteSelect;
 export const NOTEBOOK_COLUMNS = { id: true, code: true, token: true, device: true, ip: true, name: true, city: true, backOf: true, tracklistAt: true, createdAt: true } as const satisfies Prisma.NotebookSelect;
@@ -56,15 +54,15 @@ class LastHour {
 export function noteView(k: NoteRow & { _count?: { asks: number } }) {
   return {
     id: k.id, code: k.code, noteNo: noteNo(k.seq), n: k.n, dear: k.dear, thing: k.thing, title: k.title, status: k.status,
-    kind: k.kind, stamp: k.kind ? STAMPS[k.kind] || 'Love' : null, line: k.line, peruzzi: k.peruzzi, escape: k.escape,
+    kind: k.kind, line: k.line, escape: k.escape,
     answer: k.answer, answeredAt: k.answeredAt, seenAt: k.seenAt, sent: (k._count?.asks ?? 0) > 0, createdAt: k.createdAt,
   };
 }
-/** A note as anyone with its link sees it: Peruzzi's words and the tidied line, never what was typed. */
+/** A note as anyone with its link sees it: the line as Peruzzi told it, never what was typed. */
 export function publicNote(k: NoteRow, writer?: { name: string | null; city: string | null } | null) {
   return {
-    code: k.code, noteNo: noteNo(k.seq), dear: k.dear, thing: k.thing, title: k.title, kind: k.kind, stamp: STAMPS[k.kind || 'love'] || 'Love',
-    line: k.line || '', peruzzi: k.peruzzi || '', escape: k.escape || '', answer: k.answer, answeredAt: k.answeredAt,
+    code: k.code, noteNo: noteNo(k.seq), dear: k.dear, thing: k.thing, title: k.title, kind: k.kind,
+    line: k.line || '', escape: k.escape || '', answer: k.answer, answeredAt: k.answeredAt,
     writer: writer?.name ?? null, city: writer?.city ?? null, date: k.askedAt || k.createdAt,
   };
 }
@@ -182,7 +180,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
 
   // ---- the reading ----------------------------------------------------------------------------------------------
   /** The note as Peruzzi takes it: who (a name or a role), and what they did, cleaned the way every note is. Words
-   *  typed around the note's own ("Dear", "I think you", "Could this be love?") are taken off. Null: there isn't one. */
+   *  typed around the note's own ("Dear", "you", "Could this be love?") are taken off. Null: there isn't one. */
   private words(dto: { who: string; what: string }): Words | null {
     const who = clean(String(dto.who ?? '').replace(/^\s*dear\s+/i, '').replace(/[,\s]+$/, ''), 28);
     const what = clean(String(dto.what ?? '').replace(/^\s*(i\s+think\s+)?you\s+/i, '').replace(/[\s,.!?]*(could\s+this\s+be\s+love)?[\s.!?]*$/i, ''), 80);
@@ -241,7 +239,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
     draft.run.then((r) => setTimeout(() => { if (this.drafts.get(key) === draft) this.drafts.delete(key); if (!draft.used) this.unused(r); }, 4 * 60_000).unref());
   }
 
-  /** "Dear <who>, I think you <what>. Could this be love?": Peruzzi reads it on the spot. The reading started while they
+  /** "Dear <who>, you <what>.": Peruzzi reads it on the spot. The reading started while they
    *  typed is used if it was for these words; if the AI is down or too slow, a prepared one stands in. A note that
    *  describes real harm gets where to find help instead. */
   async ask(notebookId: string, token: string, dto: WriteDto) {
@@ -273,7 +271,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
       else { flags.add(!run ? 'ceiling' : r === undefined ? 'slow' : 'error'); v = flags.has('danger-words') ? seriousReading() : fallbackReading(w.who.text, w.what.text, seed); }
       const serious = v.kind === 'serious';
       if (serious) flags.add('serious');
-      const statement = `Dear ${w.who.text}, I think you ${w.what.text}. Could this be love?`;
+      const statement = `Dear ${w.who.text}, you ${w.what.text}.`;
       const n = (await this.prisma.note.count({ where: { notebookId: d.id } })) + 1;
       const k = await this.prisma.note.create({
         select: NOTE_COLUMNS,
@@ -282,15 +280,15 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
           dear: (!serious && v.dear) || w.who.text, thing: !serious && v.thing, title: serious ? 'Referred for help' : v.title,
           status: serious ? 'serious' : 'asked', fallback: !ai, model: ai?.model || peruzziModel(),
           tokensIn: ai?.usage.in || 0, tokensOut: ai?.usage.out || 0, cacheRead: ai?.usage.cacheRead || 0, cacheWrite: ai?.usage.cacheWrite || 0, ms: ai?.ms || 0,
-          ...(serious ? {} : { kind: v.kind, line: v.line, peruzzi: v.peruzzi, escape: v.escape, askedAt: new Date() }),
+          ...(serious ? {} : { kind: v.kind, line: v.line, escape: v.escape, askedAt: new Date() }),
         },
       });
       this.events.add('note_written', d.device, { back: !!d.backOf, drafted });
       if (serious) this.events.add('serious', d.device, {});
       else this.events.add('note_asked', d.device, { kind: v.kind, thing: v.thing, fallback: !ai, drafted, ms: ai?.ms || 0 });
-      // the reading starts now, so it's ready by the time the stamp comes down and the phone asks for it
+      // the reading starts now, so it's ready by the time the note lands and the phone asks for it
       const voiced = !serious && this.voiceReady() && c.voice.mode !== 'off';
-      if (voiced) this.voice.say(noteReading(v)).catch(() => {});
+      if (voiced) this.voice.say(noteReading({ dear: v.dear, line: v.line, fallback: !ai })).catch(() => {});
       return { note: noteView(k), serious, line: serious ? SERIOUS_LINE : null, voice: voiced, left: await this.leftToday(c, d.device) };
     } finally { this.busy.delete(d.id); }
   }

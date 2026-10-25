@@ -1,15 +1,14 @@
 import { motion } from 'framer-motion';
 import { ArrowRightIcon, DownloadSimpleIcon, PaperPlaneTiltIcon, ShareNetworkIcon } from '@phosphor-icons/react';
 import { NoteInfo, StageConfig } from '../../lib/api';
-import { STAMP_INK } from '../../components/Stamp';
 import { Button } from '../../components/ui';
 import { ListenButton } from '../../components/Listen';
 import { NotePaper } from '../../components/NotePaper';
 import { choiceLabel, NoteData } from '../../lib/cards';
 
-/** What the paper needs from a note. */
-export const paperOf = (n: { noteNo: string; title: string; dear: string; line: string | null; peruzzi: string | null; escape: string | null; kind: NoteInfo['kind']; stamp: string | null; answer?: NoteInfo['answer'] }, nameplate?: string): NoteData => ({
-  noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line || '', peruzzi: n.peruzzi || '', escape: n.escape || '', kind: n.kind, stamp: n.stamp || 'Love', answer: n.answer ?? null, nameplate,
+/** What the paper needs from a note, and from the stage: Peruzzi's name, and the song for its corner. */
+export const paperOf = (n: { noteNo: string; title: string; dear: string; line: string | null; escape: string | null; answer?: NoteInfo['answer'] }, cfg?: { nameplate?: string; song?: string; artist?: string } | null): NoteData => ({
+  noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line || '', escape: n.escape || '', answer: n.answer ?? null, nameplate: cfg?.nameplate, song: cfg?.song, artist: cfg?.artist,
 });
 
 /** How far a note has got, in a few words: "Seen 2:14am. No tick yet." */
@@ -27,7 +26,7 @@ export function noteState(n: NoteInfo) {
 export function NoteSheet({ note, cfg, voicing = false, land = true }: { note: NoteInfo; cfg: StageConfig; voicing?: boolean; land?: boolean }) {
   return (
     <motion.div initial={land ? { y: 60, opacity: 0 } : false} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}>
-      <NotePaper note={paperOf(note, cfg.nameplate)} answer={note.answer} land={land} />
+      <NotePaper note={paperOf(note, cfg)} answer={note.answer} />
       {voicing && <p className="caps mt-3 flex items-center justify-center gap-2 text-[10px] text-bone/55"><span className="flex items-end gap-[2px]">{[0, 1, 2, 3].map((i) => <motion.span key={i} className="w-[3px] bg-bone/60" animate={{ height: [4, 12, 6, 10, 4] }} transition={{ duration: 0.9, repeat: Infinity, delay: i * 0.12 }} />)}</span>{cfg.nameplate} is reading it out{cfg.voice.mode === 'artist_ai' ? ` · ${cfg.voice.aiLabel}` : ''}</p>}
     </motion.div>
   );
@@ -57,13 +56,13 @@ export function NextSteps({ note, cfg, onShare, onSend, className = '' }: { note
 function Step({ n, kicker, label, icon, filled = false, onClick }: { n: number; kicker: string; label: React.ReactNode; icon: React.ReactNode; filled?: boolean; onClick: () => void }) {
   return (
     <button onClick={onClick}
-      className={`group flex min-h-[72px] w-full items-center gap-3.5 py-2.5 pl-3 pr-4 text-left transition-[transform,background-color,border-color] duration-150 active:scale-[0.99] ${filled ? 'bg-bone text-ink shadow-[0_12px_32px_-12px_rgba(236,229,216,0.45)] hover:bg-white' : 'border border-bone/30 text-bone hover:border-bone/60'}`}>
-      <span className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full ${filled ? 'bg-ink text-bone' : 'border border-bone/35 text-bone/90'}`}>{icon}</span>
+      className={`group flex min-h-[72px] w-full items-center gap-3.5 rounded-xl py-2.5 pl-3 pr-4 text-left transition-[transform,filter,border-color] duration-150 active:scale-[0.99] ${filled ? 'fire text-white shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)] hover:brightness-110' : 'border border-bone/30 text-bone hover:border-bone/60'}`}>
+      <span className={`flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full ${filled ? 'bg-white/20 text-white' : 'border border-bone/35 text-bone/90'}`}>{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className={`caps block text-[10px] ${filled ? 'text-ink/60' : 'text-bone/55'}`}>{n} · {kicker}</span>
+        <span className={`caps block text-[10px] ${filled ? 'text-white/85' : 'text-bone/55'}`}>{n} · {kicker}</span>
         <span className="mt-0.5 block text-[17.5px] font-semibold leading-snug">{label}</span>
       </span>
-      <ArrowRightIcon size={18} weight="bold" className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${filled ? 'text-ink/70' : 'text-bone/60'}`} />
+      <ArrowRightIcon size={18} weight="bold" className={`shrink-0 transition-transform group-hover:translate-x-0.5 ${filled ? 'text-white/85' : 'text-bone/60'}`} />
     </button>
   );
 }
@@ -77,7 +76,7 @@ export function NoteView({ note, cfg, notes, voicing = false, land = true, prima
     <div className="px-4 pb-[max(18px,env(safe-area-inset-bottom))] pt-4">
       <NoteSheet note={note} cfg={cfg} voicing={voicing} land={land} />
       <motion.div className="mt-3" initial={land ? { opacity: 0, y: 10 } : false} animate={{ opacity: 1, y: 0 }} transition={{ delay: land ? 0.9 : 0, duration: 0.5 }}>
-        <button onClick={onSave} className="flex min-h-[50px] w-full items-center justify-center gap-2 border border-bone/20 px-2 text-[15px] text-bone/85 hover:border-bone/50"><DownloadSimpleIcon size={18} />Save image</button>
+        <button onClick={onSave} className="flex min-h-[50px] w-full items-center justify-center gap-2 rounded-xl border border-bone/20 px-2 text-[15px] text-bone/85 hover:border-bone/50"><DownloadSimpleIcon size={18} />Save image</button>
         <NextSteps note={note} cfg={cfg} onShare={onShare} onSend={onSend} className="mt-8" />
         {primary && <Button className="mt-8 w-full" onClick={primary.go}>{primary.label}</Button>}
         <NotesStrip notes={notes} current={note.id} onOpen={onNotes} className={primary ? 'mt-2.5' : 'mt-8'} />
@@ -86,7 +85,7 @@ export function NoteView({ note, cfg, notes, voicing = false, land = true, prima
   );
 }
 
-/** The notebook at a glance: how many notes, the latest ones (each stamped, or ticked once answered), and the way in.
+/** The notebook at a glance: how many notes, the latest ones (each with its question, or ticked once answered), and the way in.
  *  Every one of them is on the tracklist. */
 export function NotesStrip({ notes, current, onOpen, className = '' }: { notes: NoteInfo[]; current?: string; onOpen: () => void; className?: string }) {
   const kept = notes.filter((k) => k.status !== 'serious' && k.kind);
@@ -107,13 +106,12 @@ export function NotesStrip({ notes, current, onOpen, className = '' }: { notes: 
   );
 }
 function Slot({ k, current }: { k: NoteInfo; current: boolean }) {
-  const ink = STAMP_INK[k.kind!];
   return (
-    <motion.span className={`paper relative flex h-[42px] w-[32px] items-center justify-center ${current ? 'ring-1 ring-bone/80 ring-offset-2 ring-offset-ink' : ''}`} initial={current ? { y: -6, opacity: 0 } : false} animate={{ y: 0, opacity: 1 }}>
-      <span className="absolute inset-x-[5px] top-[7px] h-[2px] bg-paper-ink/15" /><span className="absolute inset-x-[5px] top-[12px] h-[2px] bg-paper-ink/15" />
+    <motion.span className={`paper relative flex h-[42px] w-[32px] flex-col items-center justify-end rounded-[4px] pb-[5px] ${current ? 'ring-1 ring-bone/80 ring-offset-2 ring-offset-ink' : ''}`} initial={current ? { y: -6, opacity: 0 } : false} animate={{ y: 0, opacity: 1 }}>
+      <span className="absolute inset-x-[5px] top-[6px] h-[2px] bg-paper-ink/15" /><span className="absolute inset-x-[5px] top-[11px] h-[2px] bg-paper-ink/15" />
       {k.answer
-        ? <svg aria-hidden viewBox="0 0 20 20" className="mt-2 h-[16px] w-[16px]"><rect x="2" y="4" width="13" height="13" fill="none" stroke="rgba(29,26,22,0.6)" strokeWidth="1.5" /><path d="M4 11 L8 15 L17 3" fill="none" stroke="#a11d2a" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        : <span className="mt-2 h-[13px] w-[20px] -rotate-12 border-2" style={{ borderColor: ink }} />}
+        ? <svg aria-hidden viewBox="0 0 20 20" className="h-[16px] w-[16px]"><rect x="2" y="4" width="13" height="13" rx="2" fill="none" stroke="rgba(36,9,31,0.6)" strokeWidth="1.5" /><path d="M4 11 L8 15 L17 3" fill="none" stroke="#ee1d52" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        : <span className="fire h-[11px] w-[22px] rounded-[2px]" />}
     </motion.span>
   );
 }

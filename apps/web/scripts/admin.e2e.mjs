@@ -12,8 +12,8 @@ try {
   check('a wrong password is refused', await p.getByText('That password isn’t right.').waitFor({ timeout: 3000 }).then(() => true, () => false));
   await p.fill('input[type=password]', PW); await p.getByRole('button', { name: 'Sign in' }).click();
   await p.getByText('From the stage to sharing').waitFor();
-  check('the insights load: the way from the stage to sharing, the answers, Peruzzi’s stamps', await p.getByRole('heading', { name: 'The answers' }).isVisible() && await p.getByRole('heading', { name: 'Peruzzi’s stamps' }).isVisible()
-    && await p.getByText('Got Peruzzi’s line').isVisible());
+  check('the insights load: the way from the stage to sharing, the answers, what the notes were about', await p.getByRole('heading', { name: 'The answers' }).isVisible() && await p.getByRole('heading', { name: 'What the notes were about' }).isVisible()
+    && await p.getByText('Peruzzi read it').isVisible());
   const ins = await (await fetch(`${A}/api/admin/insights`, { headers: H })).json();
   check('…counted from the notes themselves', ins.totals.asked <= ins.totals.notes && ins.totals.yes <= ins.totals.answered && ins.totals.answered <= ins.totals.asked, JSON.stringify({ notes: ins.totals.notes, asked: ins.totals.asked, answered: ins.totals.answered }));
   await p.screenshot({ path: `${SHOTS}/admin-insights.png`, fullPage: true });
@@ -74,7 +74,7 @@ try {
     await p.getByPlaceholder('Search titles, who it’s to and what was written').fill(k.dear); await p.getByRole('button', { name: 'Search' }).click();
     await p.locator('main button').filter({ hasText: `Dear ${k.dear} · ${k.title}` }).first().click();
     const sheet = p.getByRole('dialog', { name: 'Note' }); await sheet.waitFor();
-    check('a note opens with what was written and what Peruzzi said', await sheet.getByText('As written').isVisible() && await sheet.getByText(/^Peruzzi says: /).isVisible());
+    check('a note opens with what was written and what Peruzzi said', await sheet.getByText('As written').isVisible() && await sheet.getByText('Peruzzi asks: Could this be love?').isVisible());
     await p.screenshot({ path: `${SHOTS}/admin-note.png` });
     const code = (await (await fetch(`${A}/api/admin/notes/${k.id}`, { headers: H })).json()).code;
     await sheet.getByRole('button', { name: 'Hide from public links' }).click(); await sheet.getByRole('button', { name: 'Show it again' }).waitFor();

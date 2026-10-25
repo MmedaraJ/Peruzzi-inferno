@@ -65,7 +65,7 @@ export class InsightsService {
         seen, answered, yes, yesRate: answered ? Math.round((yes / answered) * 100) : 0, backs, contacts, marketing, streamClicks, serious, fallbacks,
       },
       funnel: [
-        { step: 'Opened the stage', people: opened }, { step: 'Wrote a note', people: wrote }, { step: 'Got Peruzzi’s line', people: asked },
+        { step: 'Opened the stage', people: opened }, { step: 'Wrote a note', people: wrote }, { step: 'Peruzzi read it', people: asked },
         { step: 'Sent, shared or saved it', people: sentPeople }, { step: 'Made a tracklist', people: tracklists },
       ],
       kinds: kinds.map((v) => ({ kind: v.kind, n: v._count._all })).sort((a, b) => b.n - a.n),

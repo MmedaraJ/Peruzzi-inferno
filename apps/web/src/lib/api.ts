@@ -45,8 +45,8 @@ export type Answer = 'yes' | 'no' | 'escape';
 /** A note as the phone that wrote it sees it. `dear`: who it's to, as the note says it after "Dear" ("Tolu", "Crush");
  *  `thing`: something that can't answer (a bed, jollof); `title`: as Peruzzi titled it, like a track. */
 export interface NoteInfo {
-  id: string; code: string; noteNo: string; n: number; dear: string; thing: boolean; title: string; status?: string; kind: NoteKind | null; stamp: string | null;
-  line: string | null; peruzzi: string | null; escape: string | null; answer: Answer | null; answeredAt: string | null; seenAt: string | null; sent: boolean; createdAt?: string;
+  id: string; code: string; noteNo: string; n: number; dear: string; thing: boolean; title: string; status?: string; kind: NoteKind | null;
+  line: string | null; escape: string | null; answer: Answer | null; answeredAt: string | null; seenAt: string | null; sent: boolean; createdAt?: string;
 }
 /** the note a notebook writes back to: who sent it, to whom, what it said, and how it was answered */
 export interface Back { sender: string; dear: string; line: string; answer: string | null }
@@ -58,7 +58,7 @@ export interface Written { who: string; what: string; name?: string }
 export interface Asked { note: NoteInfo; serious: boolean; line: string | null; voice: boolean; left: number }
 /** A note as anyone with its link sees it: Peruzzi's words and the tidied line, never what was typed. */
 export interface PublicNote {
-  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; stamp: string; line: string; peruzzi: string; escape: string;
+  code: string; noteNo: string; dear: string; thing: boolean; title: string; kind: NoteKind | null; line: string; escape: string;
   answer: Answer | null; answeredAt: string | null; writer: string | null; city: string | null; date: string;
 }
 /** The note, for the person it was sent to: who it's from and what it says (and their answer, once given). */

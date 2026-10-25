@@ -15,14 +15,16 @@ import { NoteView } from './NoteView';
 type Phase = 'write' | 'reading' | 'asked' | 'serious';
 /** how much each blank takes: a name or a role, and what they do in a line */
 export const WHO_MAX = 28, WHAT_MAX = 80;
-/** what the blanks suggest while they're empty, a pair at a time */
+/** what the blanks suggest while they're empty, a pair at a time: something sweet, or something they shouldn't have */
 const EXAMPLES: [string, string][] = [
   ['my crush', 'saved the last puff-puff for me on purpose'],
-  ['Tolu', 'laugh at my jokes before I finish them'],
+  ['Tobi', 'left me on read for three days, then liked my story'],
   ['my mum', 'call me just to ask if I’ve eaten'],
+  ['Emeka', 'only call me when your data finishes'],
   ['my bestie', 'know my food order before I say it'],
-  ['Kemi', 'queued at that ATM with me for two hours on purpose'],
-  ['Chidi', 'fought that conductor over my ₦100 change'],
+  ['Chidi', 'ate my jollof and blamed the generator'],
+  ['Kemi', 'queued at that ATM with me for two hours'],
+  ['my guy', 'borrowed my charger in 2023 and never returned it'],
   ['my bed', 'hold me better than anyone ever has'],
 ];
 /** who's on stage while Peruzzi reads, left to right: the band, Peruzzi in the middle, the crowd. They give their
@@ -54,14 +56,14 @@ const ROOM: Record<NoteKind, Reaction> = { love: 'aww', not_love: 'laugh', nonse
 const FIRST_WORD_AFTER = 1100;
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
-/** A note, start to finish, in one sentence: "Dear ___, I think you ___. Could this be love?", the two blanks filled in
- *  by the writer (what they do kept short by its count). Once they stop typing, Peruzzi starts on his reading, so by the
- *  time they hand it up it's ready, or nearly: the band and the crowd give their word, Peruzzi last, the drummer's
- *  crash, his stamp, and the note with his line on it. The screen is pinned to the part of the page that can be seen,
+/** A note, start to finish, in one sentence: "Dear ___, you ___.", the two blanks filled in by the writer (what they
+ *  did kept short by its count). Once they stop typing, Peruzzi starts on his reading, so by the time they hand it up
+ *  it's ready, or nearly: the lights come up on the band and the crowd, Peruzzi last, the drummer's crash, and the
+ *  note, with what they did as Peruzzi tells it and his question. The screen is pinned to the part of the page that can be seen,
  *  so the keyboard pushes the sheet up instead of sliding the stage off the top. */
 export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, onNotes, onSave, onShare, onSend }: {
   cfg: StageConfig; notebook: { id: string; token: string }; back?: Back | null; notes: NoteInfo[];
-  /** the note is read: called the moment it arrives, so the notebook has it before the stamp comes down */
+  /** the note is read: called the moment it arrives, so the notebook has it before the note lands */
   onAsked: (n: NoteInfo) => void;
   /** the stage won't take a note now (the day's notes are used up, or it's paused) */
   onStopped: (e: ApiError) => void;
@@ -78,8 +80,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<NoteInfo | null>(null);
   const [serious, setSerious] = useState('');
-  const [words, setWords] = useState(0);
-  const [kind, setKind] = useState<NoteKind | null>(null);
+  const [lit, setLit] = useState(0);
   const [voicing, setVoicing] = useState(false);
   const [jolt, setJolt] = useState(false);
   const [ex, setEx] = useState(() => Math.floor(Math.random() * EXAMPLES.length));
@@ -128,9 +129,9 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
   };
 
   /** The reading: everyone on stage is up to something while it comes in (a line at a time, for as long as it takes),
-   *  each gives their word, the drummer's crash, the stamp, and the note, read out when the stage has a voice. */
+   *  the lights come up on each of them, the drummer's crash, and the note, read out when the stage has a voice. */
   const read = async (asking: Promise<Asked>) => {
-    setPhase('reading'); setWords(0); setKind(null);
+    setPhase('reading'); setLit(0);
     const t0 = performance.now();
     sound.play('murmur', { duration: 1.4, strength: 0.55 }); sound.play('drumroll', { duration: 2 });
     // the drumroll keeps going while Peruzzi reads
@@ -153,21 +154,19 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
     setNote(r.note);
     if (r.serious || !r.note.kind) { setSerious(r.line || ''); setPhase('serious'); sound.stopMusic(1.5); track('help_view'); return; }
     const voice = r.voice && voiceOn ? sound.prefetch(api.voiceUrl(r.note.id, { t: notebook.token })) : Promise.resolve(null);
-    setKind(r.note.kind);
     const early = FIRST_WORD_AFTER - (performance.now() - t0);
     if (early > 0) await sleep(early);
     for (let i = 0; i < 3; i++) {
       if (i) await sleep(220);
       if (!mounted.current) return;
-      setWords(i + 1); sound.play('paper');
+      setLit(i + 1); sound.play('paper');
     }
-    // the room agrees, long enough to read it, then the drummer's crash
+    // the lights are up, long enough to see it, then the drummer's crash and the note
     await sleep(650);
     if (!mounted.current) return;
     sound.play('crash', { strength: 1 }); stage.current?.flash(1);
     pulse(setJolt, 420); setPhase('asked');
-    await sleep(520); sound.play('stamp', { strength: 1 });
-    await sleep(500);
+    await sleep(900);
     stage.current?.react(ROOM[r.note.kind] || 'aww');
     if (r.note.kind === 'love') sound.play('chime');
     const url = await voice;
@@ -195,7 +194,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
     <OnScreen>
       <div data-write className={`absolute inset-x-0 z-10 mx-auto flex w-full max-w-[520px] flex-col overflow-hidden bg-ink ${jolt ? 'jolt' : ''}`} style={{ top: 'var(--vvt, 0px)', bottom: 'var(--kb, 0px)' }}>
         <TopBar onExit={onNotes} left={
-          <p className="truncate pl-2"><span className="caps text-[11px] text-bone/80">{note ? `Note ${note.noteNo}` : back ? 'Writing back' : 'Peruzzi Asked'}</span>{phase === 'asked' && note && <span className="text-[13px] text-bone/50"> · {note.title}</span>}</p>
+          <p className="truncate pl-2"><span className="caps text-[11px] text-bone/80">{note ? `Note ${note.noteNo}` : back ? 'Writing back' : 'Peruzzi Asks'}</span>{phase === 'asked' && note && <span className="text-[13px] text-bone/50"> · {note.title}</span>}</p>
         } className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/70 to-transparent" />
         <div ref={box} className={`no-scrollbar relative flex min-h-0 flex-1 flex-col ${writing ? 'overflow-y-auto' : 'overflow-hidden'}`}>
           <StageScene ref={stage} nameplate={cfg.nameplate} className="shrink-0"
@@ -219,13 +218,13 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
                       <h1 className="display mt-0.5 text-[25px] leading-tight text-bone/90">{back ? `write ${back.sender} back` : 'who’s on your mind?'}</h1>
                     </motion.div>
                   )}
-                  <Sheet who={who} what={what} example={EXAMPLES[ex]} whoRef={whoRef} whatRef={whatRef} locked={phase !== 'write'}
+                  <Sheet who={who} what={what} example={EXAMPLES[ex]} whoRef={whoRef} whatRef={whatRef} locked={phase !== 'write'} nameplate={cfg.nameplate}
                     onWho={(t) => { setWho(t); setHint(null); }} onWhat={(t) => { setWhat(t); setHint(null); }} onNext={() => whatRef.current?.focus()} onHandUp={handUp} />
-                  {(hint || error) && <p role="alert" className="mt-2.5 px-1 text-[15px] leading-snug text-[#e7a3a3]">{hint || error}</p>}
-                  {cfg.readLive && !typing && <p className="mt-3 flex items-start gap-2 px-1 text-[14.5px] leading-snug text-bone/65"><MicrophoneStageIcon size={16} className="mt-0.5 shrink-0 text-[#e58a8a]" /><span>Make it a good one. {cfg.artist} could read the best notes out live.</span></p>}
+                  {(hint || error) && <p role="alert" className="mt-2.5 px-1 text-[15px] leading-snug text-[#ff9aae]">{hint || error}</p>}
+                  {cfg.readLive && !typing && <p className="mt-3 flex items-start gap-2 px-1 text-[14.5px] leading-snug text-bone/65"><MicrophoneStageIcon size={16} className="mt-0.5 shrink-0 text-[#ff8a6b]" /><span>Make it a good one. {cfg.artist} could read the best notes out live.</span></p>}
                   <div aria-hidden className="h-6" />
                 </form>
-                <AnimatePresence>{phase === 'reading' && <Reading panel={PANEL(cfg.nameplate)} lines={reading(cfg.nameplate, who)} words={words} kind={kind} nameplate={cfg.nameplate} />}</AnimatePresence>
+                <AnimatePresence>{phase === 'reading' && <Reading panel={PANEL(cfg.nameplate)} lines={reading(cfg.nameplate, who)} lit={lit} nameplate={cfg.nameplate} />}</AnimatePresence>
               </>
             )}
           </div>
@@ -235,7 +234,7 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
         {writing && (
           <div className={`shrink-0 border-t border-bone/10 bg-coal/90 px-5 pt-3 ${typing ? 'pb-3' : 'safe-b'}`}>
             <button type="submit" form={formId}
-              className="flex min-h-[54px] w-full items-center justify-center gap-2.5 bg-bone px-6 text-[17.5px] font-semibold text-ink shadow-[0_10px_30px_-12px_rgba(236,229,216,0.45)] transition-[transform,background-color,opacity] duration-150 hover:bg-white active:scale-[0.985] disabled:opacity-60">
+              className="fire flex min-h-[54px] w-full items-center justify-center gap-2.5 rounded-xl px-6 text-[17.5px] font-semibold text-white shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)] transition-[transform,filter,opacity] duration-150 hover:brightness-110 active:scale-[0.985] disabled:opacity-60">
               <MicrophoneStageIcon size={20} weight="bold" /> {cfg.nameplate}, help me ask
             </button>
           </div>
@@ -245,16 +244,16 @@ export function Write({ cfg, notebook, back, notes, onAsked, onStopped, onNext, 
   );
 }
 
-/** The note, on the stage's paper: "Dear", the first blank, "I think you", the second, and the question printed under
- *  them with the three boxes it will be answered in. The second counts down to its limit; Return in the first goes on
- *  to the second, and in the second hands the note up. */
-function Sheet({ who, what, example, whoRef, whatRef, locked, onWho, onWhat, onNext, onHandUp }: {
+/** The note, on the stage's paper: "Dear", the first blank, "You", the second, and under them Peruzzi's question and
+ *  the three boxes it will be answered in, as the note will have them. The second counts down to its limit; Return in
+ *  the first goes on to the second, and in the second hands the note up. */
+function Sheet({ who, what, example, whoRef, whatRef, locked, nameplate, onWho, onWhat, onNext, onHandUp }: {
   who: string; what: string; example: [string, string]; whoRef: React.RefObject<HTMLInputElement>; whatRef: React.RefObject<HTMLTextAreaElement>; locked: boolean;
-  onWho: (t: string) => void; onWhat: (t: string) => void; onNext: () => void; onHandUp: () => void;
+  nameplate: string; onWho: (t: string) => void; onWhat: (t: string) => void; onNext: () => void; onHandUp: () => void;
 }) {
   const left = WHAT_MAX - what.length;
   const word = 'display shrink-0 text-[23px] leading-none text-paper-ink';
-  const blank = 'min-w-0 flex-1 rounded-none border-0 border-b-2 border-dashed border-paper-ink/35 bg-transparent px-1 text-[20px] italic text-paper-ink placeholder:text-paper-ink/35 placeholder:not-italic focus:border-solid focus:border-stamp focus:outline-none disabled:opacity-70';
+  const blank = 'min-w-0 flex-1 rounded-none border-0 border-b-2 border-dashed border-paper-ink/35 bg-transparent px-1 text-[20px] italic text-paper-ink placeholder:text-paper-ink/35 placeholder:not-italic focus:border-solid focus:border-fire focus:outline-none disabled:opacity-70';
   /** the second blank's lines: with one in it, it's as tall as the first blank (36px) */
   const lines = 'block w-full resize-none overflow-hidden pb-1 pt-0.5 leading-[28px]';
   // the second blank is as tall as what's in it (the example, while it's empty), so its line sits under the words: a
@@ -267,8 +266,9 @@ function Sheet({ who, what, example, whoRef, whatRef, locked, onWho, onWhat, onN
     return () => window.removeEventListener('resize', fit);
   }, [what, example, whatRef]);
   return (
-    <div className="paper relative -rotate-[0.4deg] px-4 pb-3.5 pt-3 shadow-[0_22px_44px_-20px_rgba(0,0,0,0.95)]">
-      <p className="caps border-b border-paper-ink/15 pb-1.5 text-[10px] text-paper-ink/55">Peruzzi Asked · Your note</p>
+    <div className="paper relative -rotate-[0.4deg] overflow-hidden rounded-xl px-4 pb-3.5 pt-3 shadow-[0_22px_44px_-20px_rgba(0,0,0,0.95)]">
+      <span aria-hidden className="fire absolute inset-x-0 top-0 h-[5px]" />
+      <p className="caps border-b border-paper-ink/15 pb-1.5 text-[10px] text-paper-ink/55">Peruzzi Asks · Your note</p>
       <label className="mt-3.5 flex items-end gap-3">
         <span className={word}>Dear</span>
         <input ref={whoRef} value={who} onChange={(e) => onWho(e.target.value.slice(0, WHO_MAX))} maxLength={WHO_MAX} disabled={locked}
@@ -277,69 +277,63 @@ function Sheet({ who, what, example, whoRef, whatRef, locked, onWho, onWhat, onN
           className={`${blank} h-9 pb-0.5`} />
         <span className={`${word} -ml-2`}>,</span>
       </label>
-      {/* "I think you" sits on the first line as "Dear" sits on its blank */}
+      {/* "You" sits on the first line as "Dear" sits on its blank */}
       <label className="mt-3 flex items-start gap-3">
-        <span className={`${word} pt-[13px]`}>I think you</span>
+        <span className={`${word} pt-[13px]`}>You</span>
         <span className="relative min-w-0 flex-1">
           <textarea ref={whatRef} value={what} onChange={(e) => onWhat(e.target.value.replace(/\n/g, ' ').slice(0, WHAT_MAX))} maxLength={WHAT_MAX} disabled={locked} rows={1}
-            placeholder={example[1]} aria-label="What they do" aria-describedby="what-count" enterKeyHint="go"
+            placeholder={example[1]} aria-label="What they did" aria-describedby="what-count" enterKeyHint="go"
             onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onHandUp(); } }}
             className={`${blank} ${lines} ${what ? '' : 'motion-safe:transition-[height] motion-safe:duration-200'}`} />
           <textarea ref={twin} value={what || example[1]} readOnly disabled tabIndex={-1} aria-hidden rows={1}
             className={`${blank} ${lines} pointer-events-none invisible absolute inset-x-0 top-0`} style={{ fontStyle: what ? 'italic' : 'normal' }} />
         </span>
       </label>
-      <div className="mt-2.5 flex items-end justify-between gap-3">
-        <span className={word}>Could this be love?</span>
-        <span id="what-count" className={`tabular pb-0.5 text-[12.5px] ${left <= 10 ? 'text-stamp' : 'text-paper-ink/45'}`}>{what.length}/{WHAT_MAX}</span>
+      <p className="mt-1 text-right"><span id="what-count" className={`tabular text-[12.5px] ${left <= 10 ? 'text-fire' : 'text-paper-ink/45'}`}>{what.length}/{WHAT_MAX}</span></p>
+      {/* Peruzzi's question, and the boxes they'll answer in, faint until then: the third is Peruzzi's to write */}
+      <div className="fire mt-2 rounded-lg px-3 py-2 text-center text-white">
+        <p className="caps text-[9.5px] text-white/90">{nameplate} asks</p>
+        <p className="display text-[21px] leading-tight">Could this be love?</p>
       </div>
-      {/* the boxes they'll answer in, faint until then: the third is Peruzzi's to write */}
       <p aria-hidden className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[15px] text-paper-ink/45">
-        {['Yes', 'No', '…'].map((l) => <span key={l} className="inline-flex items-center gap-1.5"><span className="inline-block h-[13px] w-[13px] border-[1.5px] border-paper-ink/40" />{l}</span>)}
+        {['Yes', 'No', '…'].map((l) => <span key={l} className="inline-flex items-center gap-1.5"><span className="inline-block h-[13px] w-[13px] rounded-[2px] border-[1.5px] border-paper-ink/40" />{l}</span>)}
         <span className="caps text-[9px] text-paper-ink/40">They tick one</span>
       </p>
     </div>
   );
 }
 
-/** Peruzzi reads: the band, Peruzzi and the crowd on their slips, each up to something (the drumsticks going, the mic
- *  swaying, the phones up), and over them, typed out a line at a time, what they're doing about the note, for as long
- *  as it takes. Then each one's word is stamped on their slip, Peruzzi's last. */
-function Reading({ panel, lines, words, kind, nameplate }: { panel: string[]; lines: [number, string][]; words: number; kind: NoteKind | null; nameplate: string }) {
-  const word = kind === 'not_love' ? 'Not love' : kind === 'nonsense' ? 'Huh?' : 'Love';
-  const ink = kind === 'love' || !kind ? '#a11d2a' : '#24201b';
+/** Peruzzi reads: the band, Peruzzi and the crowd on their slips, each up to something (the guitar strumming, the mic
+ *  swaying, the crowd clapping), and over them, typed out a line at a time, what they're doing about the note, for as
+ *  long as it takes. Then the lights come up on each of them in turn, Peruzzi's last. */
+function Reading({ panel, lines, lit, nameplate }: { panel: string[]; lines: [number, string][]; lit: number; nameplate: string }) {
   // a line every 1.3 s, typed out, starting from a different one each note
   const [at, setAt] = useState(() => Math.floor(Math.random() * lines.length));
   const [typed, setTyped] = useState(0);
   const [who, line] = lines[at % lines.length];
-  useEffect(() => { if (words) return; const t = window.setInterval(() => { setAt((x) => x + 1); setTyped(0); }, 1300); return () => window.clearInterval(t); }, [words]);
+  useEffect(() => { if (lit) return; const t = window.setInterval(() => { setAt((x) => x + 1); setTyped(0); }, 1300); return () => window.clearInterval(t); }, [lit]);
   useEffect(() => { if (typed >= line.length) return; const t = window.setTimeout(() => setTyped((n) => Math.min(line.length, n + 2)), 28); return () => window.clearTimeout(t); }, [typed, line]);
-  const status = words >= 3 ? 'The room agrees.' : words > 0 ? 'The room is deciding…' : null;
+  const status = lit >= 3 ? `${nameplate} has it.` : lit > 0 ? 'The lights are coming up…' : null;
   return (
     <motion.div className="absolute inset-0 z-10 flex flex-col items-center bg-ink/[0.94] px-5 pt-6 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
       <p className="display text-center text-[30px] leading-tight text-bone">{nameplate.toLowerCase()} is reading it</p>
       <p data-ticker className="mt-2 flex min-h-[46px] max-w-sm items-start justify-center text-center text-[16px] italic leading-snug text-bone/75" aria-live="polite">
-        {status ? <span className="caps pt-1 text-[12px] not-italic text-bone/80">{status}</span>
+        {status ? <span className="caps pt-1 text-[12px] not-italic text-bone/85">{status}</span>
           : <span>{line.slice(0, typed)}<span className="caret ml-[2px] inline-block h-[0.9em] w-[2px] translate-y-[2px] bg-bone/60" /></span>}
       </p>
       <div className="mt-4 grid w-full max-w-sm grid-cols-3 items-end gap-2.5">
         {panel.map((p, i) => {
-          const given = [0, 2, 1].indexOf(i) < words;   // Peruzzi, in the middle, gives his word last
+          const on = [0, 2, 1].indexOf(i) < lit;   // Peruzzi, in the middle, gets his light last
           const busy = !status && who === i;
           return (
             <div key={p} className="flex flex-col items-center">
-              <motion.div className={`paper relative flex w-full flex-col items-center justify-center px-1.5 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] ${i === 1 ? 'h-[122px]' : 'h-[108px]'}`}
-                style={{ rotate: [-2, 0.8, 1.6][i] }} animate={{ y: busy ? -7 : 0, scale: busy ? 1.04 : 1 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
-                {busy && <span className="pointer-events-none absolute inset-0 ring-2 ring-stamp/50" />}
+              <motion.div data-lit={on ? '' : undefined} className={`relative flex w-full flex-col items-center justify-center overflow-hidden rounded-xl px-1.5 shadow-[0_14px_30px_-14px_rgba(0,0,0,0.9)] transition-[background-color,box-shadow,color] duration-200 ${on ? 'fire text-white shadow-[0_0_34px_-4px_rgba(255,45,85,0.75)]' : 'paper text-paper-ink/80'} ${i === 1 ? 'h-[122px]' : 'h-[108px]'}`}
+                style={{ rotate: [-2, 0.8, 1.6][i] }} animate={{ y: busy ? -7 : 0, scale: busy || on ? 1.04 : 1 }} transition={{ type: 'spring', stiffness: 380, damping: 22 }}>
+                {busy && <span className="pointer-events-none absolute inset-0 rounded-xl ring-2 ring-fire/60" />}
                 <SlipArt place={i} />
-                {/* each word is stamped on its slip (in CSS, so it lands on time however busy the page is) */}
-                <span className="mt-1.5 flex h-[24px] items-center">
-                  {given
-                    ? <span className="stamp-land" style={{ '--tilt': '-8deg' } as CSSProperties}><span className="caps block border-2 px-1.5 py-0.5 text-[13px] leading-none" style={{ color: ink, borderColor: ink }}>{word}</span></span>
-                    : <Dots />}
-                </span>
+                <span className="mt-1.5 flex h-[24px] items-center">{on ? <span className="caps text-[11px] text-white">Ready</span> : <Dots />}</span>
               </motion.div>
-              <p className={`caps mt-2 text-center text-[9px] leading-snug ${busy ? 'text-bone' : 'text-bone/60'}`}>{p}</p>
+              <p className={`caps mt-2 text-center text-[9px] leading-snug ${busy || on ? 'text-bone' : 'text-bone/60'}`}>{p}</p>
             </div>
           );
         })}
@@ -352,17 +346,17 @@ function Reading({ panel, lines, words, kind, nameplate }: { panel: string[]; li
 function SlipArt({ place }: { place: number }) {
   if (place === 1) return (
     <motion.span aria-hidden className="block" style={{ originX: 0.5, originY: 0.95 }} animate={{ rotate: [0, -10, 6, -4, 0] }} transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}>
-      <MicrophoneStageIcon size={40} weight="fill" className="text-paper-ink/80" />
+      <MicrophoneStageIcon size={40} weight="fill" />
     </motion.span>
   );
   if (place === 0) return (
     <motion.span aria-hidden className="block" style={{ originX: 0.3, originY: 0.7 }} animate={{ rotate: [0, -6, 0, -6, 0], y: [0, 1, 0, 1, 0] }} transition={{ duration: 0.9, repeat: Infinity, ease: 'easeInOut' }}>
-      <GuitarIcon size={40} weight="fill" className="text-paper-ink/80" />
+      <GuitarIcon size={40} weight="fill" />
     </motion.span>
   );
   return (
     <motion.span aria-hidden className="block" animate={{ scale: [1, 0.86, 1, 0.86, 1] }} transition={{ duration: 0.8, repeat: Infinity, ease: 'easeInOut' }}>
-      <HandsClappingIcon size={40} weight="fill" className="text-paper-ink/80" />
+      <HandsClappingIcon size={40} weight="fill" />
     </motion.span>
   );
 }

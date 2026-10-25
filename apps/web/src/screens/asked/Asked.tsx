@@ -38,7 +38,7 @@ const viewOf = (path: string): { view: View | null; id?: string } => {
   return { view: null };
 };
 
-/** Peruzzi Asked, from the first note to the tracklist, and the note as the person it's for opens it. Each screen has
+/** Peruzzi Asks, from the first note to the tracklist, and the note as the person it's for opens it. Each screen has
  *  its own address (so the phone's back button goes where you'd expect), and this one component holds them all, so
  *  the song and the notebook carry on throughout:
  *
@@ -169,9 +169,9 @@ export default function Asked() {
   const out = () => { refresh(); go('/notes'); };
 
   // the note's card, drawn as soon as the note has landed, so Save and Post can open the share sheet at once
-  const cardData = (n: NoteInfo) => ({ ...paperOf(n, cfg?.nameplate), site: location.host, song: cfg?.song, artist: cfg?.artist });
+  const cardData = (n: NoteInfo) => ({ ...paperOf(n, cfg), site: location.host });
   const prepare = (n: NoteInfo, andUpload = true) => {
-    const card: Card = { ready: noteCard(cardData(n), 'story').then((cv) => toBlob(cv, 0.9)).then((b) => new File([b], `peruzzi-asked-note-${n.noteNo}.jpg`, { type: 'image/jpeg' })) };
+    const card: Card = { ready: noteCard(cardData(n), 'story').then((cv) => toBlob(cv, 0.9)).then((b) => new File([b], `peruzzi-asks-note-${n.noteNo}.jpg`, { type: 'image/jpeg' })) };
     card.ready.then((f) => { card.file = f; }).catch(() => {});
     cards.current.set(`${n.id}:${n.answer || ''}`, card);
     if (andUpload) upload(n);
@@ -219,7 +219,7 @@ export default function Asked() {
         // the note is in the notebook the moment Peruzzi has read it (and keeps the notebook on this phone for 30 more days)
         onAsked={(n) => {
           setNotebook((d) => (d && !d.notes.some((k) => k.id === n.id) ? { ...d, left: Math.max(0, d.left - 1), notes: [...d.notes, n] } : d)); store.setNotebook({ id: notebook.id, token: token.current });
-          // the cards are drawn once the stamp is down: drawing them holds up the phone, and the reading is on
+          // the cards are drawn once the note has landed: drawing them holds up the phone, and the reading is on
           window.setTimeout(() => (cards.current.has(`${n.id}:`) ? upload(n) : prepare(n)), 2600);
         }}
         onNext={next}
@@ -256,11 +256,11 @@ export default function Asked() {
 }
 
 function Splash() {
-  return <div className="concrete flex min-h-dvh items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 2, repeat: Infinity }}><Wordmark className="text-bone" /></motion.div></div>;
+  return <div className="night flex min-h-dvh items-center justify-center"><motion.div initial={{ opacity: 0 }} animate={{ opacity: [0.3, 0.8, 0.3] }} transition={{ duration: 2, repeat: Infinity }}><Wordmark className="text-bone" /></motion.div></div>;
 }
 function Notice({ cfg, title, text, onNotes }: { cfg: StageConfig; title: string; text: string; onNotes: (() => void) | null }) {
   return (
-    <div className="concrete relative flex min-h-dvh flex-col items-center justify-center px-8 text-center">
+    <div className="night relative flex min-h-dvh flex-col items-center justify-center px-8 text-center">
       <div className="shafts" />
       <Wordmark className="relative text-bone/80" />
       <h1 className="display relative mt-6 text-[34px] leading-tight">{title}</h1>

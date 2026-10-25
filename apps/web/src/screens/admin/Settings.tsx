@@ -38,7 +38,7 @@ export function StageSettings({ token, value, status, onSave, onReset }: { token
         </div>
       </Section>
       <Section title="Peruzzi">
-        <Field label="Name on the stage" hint="On the nameplate, on every note (“Peruzzi says”, “Asked by Peruzzi”) and on the button"><Text value={d.nameplate} onChange={(nameplate) => set({ nameplate })} /></Field>
+        <Field label="Name on the stage" hint="On the nameplate, on every note (“Peruzzi asks”) and on the button"><Text value={d.nameplate} onChange={(nameplate) => set({ nameplate })} /></Field>
         <div className="mt-4"><Field group label="Humour" hint="Peruzzi is always on the writer’s side: whatever they noticed is proof of love. This is how much he teases."><Choice value={d.humour} onChange={(humour) => set({ humour })} options={[['sweet', 'Sweet', 'Soft and warm'], ['cheeky', 'Cheeky', 'Teases a little: the usual'], ['spicy', 'Spicy', 'Teases harder, still with love']]} /></Field></div>
       </Section>
       <Section title="Read live">
@@ -57,8 +57,8 @@ export function StageSettings({ token, value, status, onSave, onReset }: { token
       </Section>
       <Section title="The song" note="The snippet plays throughout, and drops while the stage makes a sound.">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={`Volume: ${Math.round(d.music.level * 100)}%`} hint="How loud it sounds: 50% is half as loud as full, 25% a quarter"><input type="range" min={0} max={1} step={0.05} value={d.music.level} onChange={(e) => set({ music: { ...d.music, level: Number(e.target.value) } })} className="w-full accent-[#ece5d8]" /></Field>
-          <Field label={`Under the stage's sounds: ${Math.round(d.music.duck * 100)}%`}><input type="range" min={0} max={1} step={0.05} value={d.music.duck} onChange={(e) => set({ music: { ...d.music, duck: Number(e.target.value) } })} className="w-full accent-[#ece5d8]" /></Field>
+          <Field label={`Volume: ${Math.round(d.music.level * 100)}%`} hint="How loud it sounds: 50% is half as loud as full, 25% a quarter"><input type="range" min={0} max={1} step={0.05} value={d.music.level} onChange={(e) => set({ music: { ...d.music, level: Number(e.target.value) } })} className="w-full accent-[#ff6a1f]" /></Field>
+          <Field label={`Under the stage's sounds: ${Math.round(d.music.duck * 100)}%`}><input type="range" min={0} max={1} step={0.05} value={d.music.duck} onChange={(e) => set({ music: { ...d.music, duck: Number(e.target.value) } })} className="w-full accent-[#ff6a1f]" /></Field>
         </div>
       </Section>
       <Section title="When a note is serious" note="Shown instead of a note when someone describes real harm">

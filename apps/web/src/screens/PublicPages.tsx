@@ -17,7 +17,7 @@ function Shell({ children, site }: { children: React.ReactNode; site: Site | nul
   // the stage's code, fetched while the page is read, so a tap on the way in opens it at once
   useEffect(() => whenIdle(() => { loadStage().catch(() => {}); }), []);
   return (
-    <div className="concrete relative min-h-dvh overflow-hidden">
+    <div className="night relative min-h-dvh overflow-hidden">
       <div className="shafts breathe" />
       <div className="relative mx-auto max-w-md px-5 pb-10 pt-[max(28px,env(safe-area-inset-top))]">
         <Link to="/" className="mx-auto flex w-fit flex-col items-center text-bone"><Wordmark /></Link>
@@ -28,7 +28,7 @@ function Shell({ children, site }: { children: React.ReactNode; site: Site | nul
   );
 }
 function Missing({ site }: { site: Site | null }) {
-  return <Shell site={site}><h1 className="display mt-10 text-center text-[32px]">this note is gone</h1><p className="mt-3 text-center text-bone/70">It can’t be found. It may have been taken down.</p><Link to="/" className="mt-8 flex min-h-[52px] items-center justify-center bg-bone text-[17px] font-semibold text-ink">Write your own note</Link></Shell>;
+  return <Shell site={site}><h1 className="display mt-10 text-center text-[32px]">this note is gone</h1><p className="mt-3 text-center text-bone/70">It can’t be found. It may have been taken down.</p><Link to="/" className="mt-8 flex min-h-[52px] items-center justify-center rounded-xl text-[17px] font-semibold text-white fire shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)]">Write your own note</Link></Shell>;
 }
 
 /** A note someone posted, as anyone with the link sees it: Peruzzi's words and the tidied line, and the answer once
@@ -44,19 +44,19 @@ export function PublicNotePage() {
   const nameplate = site?.artist || 'Peruzzi';
   return (
     <Shell site={site}>
-      <p className="caps mt-5 text-center text-[11px] text-bone/70">{n.answer ? `${n.dear} answered` : `${nameplate} asked`}</p>
+      <p className="caps mt-5 text-center text-[11px] text-bone/70">{n.answer ? `${n.dear} answered` : `A note from ${n.writer || 'someone'}`}</p>
       <h1 className="display mt-2 text-center text-[30px] leading-tight">{n.answer ? `${n.dear} ticked ${answered(n)}` : `could this be love, ${n.dear}?`}</h1>
       {/* the pages people open from a shared link animate in CSS, so they don't wait for framer-motion; the paper is the
           story card's own, drawn on the page */}
       <div className="rise mt-6" style={{ '--rise-delay': '0s' } as CSSProperties}>
-        <NotePaper note={{ noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line, peruzzi: n.peruzzi, escape: n.escape, kind: n.kind, stamp: n.stamp, nameplate }} answer={n.answer} heading="h2" />
+        <NotePaper note={{ noteNo: n.noteNo, title: n.title, dear: n.dear, line: n.line, escape: n.escape, nameplate, song: site?.song, artist: site?.artist }} answer={n.answer} heading="h2" />
       </div>
       <p className="mt-4 text-center text-[13.5px] leading-snug text-bone/55">From {n.writer || 'someone'} · {n.title}<br />{fmt(n.date)}{n.city ? ` · ${n.city}` : ''}</p>
       <div className="mt-6 flex flex-col gap-2.5">
-        <Link to="/" onClick={() => track('write_own_click', { from: 'public_note' })} className="flex min-h-[54px] items-center justify-center bg-bone text-[17px] font-semibold text-ink">Who’s on your mind? Write a note</Link>
+        <Link to="/" onClick={() => track('write_own_click', { from: 'public_note' })} className="flex min-h-[54px] items-center justify-center rounded-xl text-[17px] font-semibold text-white fire shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)]">Who’s on your mind? Write a note</Link>
         {site?.smartLink && <ListenButton href={site.smartLink} from="public_note" kicker={`The song · ${site.artist}`} label={`Listen to ${site.song}`} />}
       </div>
-      <p className="mt-4 text-center text-[13.5px] leading-snug text-bone/50">Peruzzi Asked is a fan experience for {site?.song || 'Inferno'} by {nameplate}. Write someone a note, and Peruzzi asks them for you.</p>
+      <p className="mt-4 text-center text-[13.5px] leading-snug text-bone/50">Peruzzi Asks is a fan experience for {site?.song || 'Inferno'} by {nameplate}. Write someone a note, and Peruzzi asks them for you.</p>
     </Shell>
   );
 }
@@ -82,12 +82,12 @@ export function PublicTracklistPage() {
               <span className="display block truncate text-[19px] leading-tight">{k.title}</span>
               <span className="block truncate text-[14.5px] italic text-paper-ink/65">for {k.dear}</span>
             </Link>
-            {k.answer && <span className="shrink-0 text-right text-[14px] italic text-stamp">✓ {answered(k)}</span>}
+            {k.answer && <span className="shrink-0 text-right text-[14px] italic text-fire">✓ {answered(k)}</span>}
           </li>
         ))}
       </ol>
       <div className="mt-7 flex flex-col gap-2.5">
-        <Link to="/" onClick={() => track('write_own_click', { from: 'public_tracklist' })} className="flex min-h-[54px] items-center justify-center bg-bone text-[17px] font-semibold text-ink">Who’s on your mind? Write a note</Link>
+        <Link to="/" onClick={() => track('write_own_click', { from: 'public_tracklist' })} className="flex min-h-[54px] items-center justify-center rounded-xl text-[17px] font-semibold text-white fire shadow-[0_12px_32px_-12px_rgba(255,45,85,0.7)]">Who’s on your mind? Write a note</Link>
         {site?.smartLink && <ListenButton href={site.smartLink} from="public_tracklist" kicker={`The song · ${site.artist}`} label={`Listen to ${site.song}`} />}
       </div>
     </Shell>

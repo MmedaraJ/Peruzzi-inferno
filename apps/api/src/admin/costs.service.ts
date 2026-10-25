@@ -94,9 +94,9 @@ export class CostsService {
       const [read, drafts, voice] = await Promise.all([
         this.prisma.$queryRaw<Tokens[]>`SELECT 'all' AS k, model, SUM("tokensIn")::bigint AS i, SUM("tokensOut")::bigint AS o, SUM("cacheRead")::bigint AS r, SUM("cacheWrite")::bigint AS w, COUNT(*)::bigint AS n FROM "Note" WHERE "tokensIn" > 0 AND "createdAt" >= ${from} GROUP BY 2`,
         this.prisma.$queryRaw<Tokens[]>`SELECT 'all' AS k, model, SUM("tokensIn")::bigint AS i, SUM("tokensOut")::bigint AS o, SUM("cacheRead")::bigint AS r, SUM("cacheWrite")::bigint AS w, COUNT(*)::bigint AS n FROM "AiUse" WHERE kind = 'draft' AND at >= ${from} GROUP BY 2`,
-        // what the voice reads for a note: Peruzzi's line and "Could this be love?" (see noteReading)
+        // what the voice reads for a note: their name, what they did and "Could this be love?" (see noteReading)
         this.prisma.$queryRaw<{ n: bigint; chars: number | null }[]>`SELECT COUNT(*)::bigint AS n,
-          AVG(length(COALESCE(peruzzi, '')) + 20)::float AS chars
+          AVG(length(dear) + length(COALESCE(line, '')) + 22)::float AS chars
           FROM "Note" WHERE status = 'asked' AND "createdAt" >= ${from}`,
       ]);
       const notes = read.reduce((s, r) => s + Number(r.n), 0);

@@ -11,8 +11,8 @@ export function ListenButton({ href, from, label = 'Listen to Inferno', kicker =
 }) {
   return (
     <a href={href} target="_blank" rel="noreferrer" onClick={() => { track('stream_click', { from }); streaming.leftAt = Date.now(); }}
-      className={`group relative flex min-h-[72px] items-center gap-3.5 overflow-hidden border border-bone/25 bg-[linear-gradient(105deg,#2a241c_0%,#16130f_52%,#0e0d0b_100%)] py-2.5 pl-2.5 pr-4 text-left text-bone shadow-[0_16px_34px_-18px_rgba(0,0,0,0.95)] transition-colors hover:border-bone/60 ${className}`}>
-      <span aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_28%,rgba(236,229,216,0.08)_44%,transparent_60%)]" />
+      className={`group relative flex min-h-[72px] items-center gap-3.5 overflow-hidden rounded-xl border border-bone/20 bg-[linear-gradient(105deg,#3a0f2c_0%,#1f0819_52%,#12050f_100%)] py-2.5 pl-2.5 pr-4 text-left text-bone shadow-[0_16px_34px_-18px_rgba(0,0,0,0.95)] transition-colors hover:border-bone/50 ${className}`}>
+      <span aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(100deg,transparent_28%,rgba(255,106,31,0.14)_44%,transparent_60%)]" />
       {/* the sleeve, and the record coming out of it */}
       <span aria-hidden className="relative h-[52px] w-[80px] shrink-0">
         <span className="absolute left-[22px] top-[2px] h-[48px] w-[48px] transition-transform duration-500 ease-out group-hover:translate-x-[9px]">

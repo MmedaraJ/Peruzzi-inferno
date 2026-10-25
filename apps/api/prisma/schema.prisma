@@ -75,12 +75,10 @@ model Note {
   statement  String
   /// asked | serious
   status     String    @default("asked")
-  /// love | not_love | nonsense
+  /// love (something sweet) | not_love (something they shouldn't have) | nonsense
   kind       String?
-  /// the note's line in its writer's words, tidied: "I think you saved the last puff-puff for me on purpose."
+  /// what they did, as Peruzzi tells it to them: "You guarded the last puff-puff for me like it was your WAEC result."
   line       String?
-  /// Peruzzi's line, to the person asked: "Tolu, nobody saves the last puff-puff by accident."
-  peruzzi    String?
   /// the third box: the excuse they'd give ("I was full.")
   escape     String?
   /// yes | no | escape, ticked by the person asked
