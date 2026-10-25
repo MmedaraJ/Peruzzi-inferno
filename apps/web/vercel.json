@@ -1,0 +1,19 @@
+{
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://peruzzi-inferno-api.up.railway.app/api/:path*" },
+    { "source": "/q/:code", "destination": "https://peruzzi-inferno-api.up.railway.app/q/:code" },
+    { "source": "/a/:code", "destination": "https://peruzzi-inferno-api.up.railway.app/a/:code" },
+    { "source": "/t/:code", "destination": "https://peruzzi-inferno-api.up.railway.app/t/:code" },
+    { "source": "/((?!media/|favicon\\.png$|version\\.json$|assets/).*)", "destination": "/index.html" }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Content-Type-Options", "value": "nosniff" },
+      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+      { "key": "X-Frame-Options", "value": "DENY" }
+    ] },
+    { "source": "/media/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=604800" }] },
+    { "source": "/assets/(.*)", "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }] },
+    { "source": "/version.json", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ]
+}

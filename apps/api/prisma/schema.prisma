@@ -1,0 +1,229 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Everything the admin can change: the site, the stage's settings, the emails, the costs. Read with their defaults
+/// filled in (see src/common/config.service.ts); a row is only written once the admin saves.
+model Config {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+/// One row per moment worth counting (a note written, a note sent, an answer ticked), for Insights.
+model Event {
+  id     BigInt   @id @default(autoincrement())
+  name   String
+  device String?
+  props  Json?
+  at     DateTime @default(now())
+
+  @@index([name, at])
+  @@index([at])
+}
+
+/// The notes written on one phone: as many as they like (the day's limit aside), and the tracklist made of them.
+model Notebook {
+  id          String    @id @default(cuid())
+  /// the tracklist's public link: /t/:code
+  code        String    @unique
+  /// the phone's key to this notebook; never shown in a link
+  token       String
+  device      String
+  ip          String?
+  /// the first name the notes are from ("Tọ́kẹ́"), for the tracklist's title
+  name        String?
+  city        String?
+  /// the tracklist card as the phone drew it, for link previews
+  card        Bytes?
+  /// the ask this notebook answers back, when its first note is to the one who asked
+  backOf      String?
+  /// when its tracklist was first opened. A notebook never closes: every note after goes on it too.
+  tracklistAt DateTime?
+  createdAt   DateTime  @default(now())
+  notes       Note[]
+
+  @@index([device, createdAt])
+  @@index([ip, createdAt])
+  @@index([createdAt])
+}
+
+/// One note: "Dear ___, I think you ___. Could this be love?", what Peruzzi made of it, and the answer.
+model Note {
+  id         String    @id @default(cuid())
+  /// the number on the paper: "Note 0042"
+  seq        Int       @unique @default(autoincrement())
+  /// the note's public link: /q/:code
+  code       String    @unique
+  notebookId String
+  notebook   Notebook  @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  /// 1, 2, 3… within the notebook
+  n          Int
+  /// who it's to, as the note says it after "Dear" ("Tolu", "Crush", "Mum")
+  dear       String
+  /// to something that can't answer (a bed, jollof, Lagos): nobody to send it to
+  thing      Boolean   @default(false)
+  /// the note as Peruzzi titles it, like a track ("Last Puff-Puff")
+  title      String
+  /// as written ("Dear my crush, I think you …. Could this be love?"), after numbers and handles were taken out;
+  /// wiped after the retention setting
+  statement  String
+  /// asked | serious
+  status     String    @default("asked")
+  /// love | not_love | nonsense
+  kind       String?
+  /// the note's line in its writer's words, tidied: "I think you saved the last puff-puff for me on purpose."
+  line       String?
+  /// Peruzzi's line, to the person asked: "Tolu, nobody saves the last puff-puff by accident."
+  peruzzi    String?
+  /// the third box: the excuse they'd give ("I was full.")
+  escape     String?
+  /// yes | no | escape, ticked by the person asked
+  answer     String?
+  answeredAt DateTime?
+  /// when the person asked first opened it
+  seenAt     DateTime?
+  /// a prepared line stood in for the AI
+  fallback   Boolean   @default(false)
+  /// what the admin should know: serious, redacted, refusal, error, injection, slow, ceiling
+  flags      String[]
+  hidden     Boolean   @default(false)
+  /// the note as the phone drew it, for link previews; and the same note ticked, once it's answered
+  card       Bytes?
+  answerCard Bytes?
+  model      String?
+  tokensIn   Int       @default(0)
+  tokensOut  Int       @default(0)
+  cacheRead  Int       @default(0)
+  cacheWrite Int       @default(0)
+  /// time Peruzzi spent on it
+  ms         Int       @default(0)
+  createdAt  DateTime  @default(now())
+  askedAt    DateTime?
+  asks       Ask[]
+
+  @@index([createdAt])
+  @@index([kind])
+  @@index([answer])
+}
+
+/// Anyone who gave an email: to get their tracklist, to send a note, or to hear from Peruzzi.
+model Contact {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String?
+  verifiedAt     DateTime?
+  /// agreed to hear from Peruzzi
+  marketing      Boolean   @default(false)
+  marketingAt    DateTime?
+  unsubscribedAt DateTime?
+  /// where they first gave it: tracklist | ask
+  source         String
+  device         String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+/// A six-digit code sent to prove an address before a note is emailed from it.
+model EmailCode {
+  id        String    @id @default(cuid())
+  email     String
+  codeHash  String
+  device    String?
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([email, createdAt])
+}
+
+/// A note sent to the person it's for: a link the writer shares themselves, or an email the site sends for a writer
+/// who proved their address. Its code is the key to answering.
+model Ask {
+  id             String    @id @default(cuid())
+  /// the link to answer it: /a/:code
+  code           String    @unique
+  noteId         String
+  note           Note      @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  /// email | link
+  channel        String
+  senderEmail    String?
+  senderName     String
+  senderDevice   String?
+  recipientName  String?
+  /// a keyed hash of the recipient's address, for the weekly limit and the opt-out; the address itself is not kept
+  recipientHash  String?
+  /// t***@gmail.com, for the admin
+  recipientMask  String?
+  /// sent | failed | link
+  status         String
+  openedAt       DateTime?
+  answeredAt     DateTime?
+  /// when the person asked wrote a note back, and the notebook it's in
+  backAt         DateTime?
+  backNotebookId String?
+  createdAt      DateTime  @default(now())
+
+  @@index([senderDevice, createdAt])
+  @@index([senderEmail, createdAt])
+  @@index([recipientHash, createdAt])
+}
+
+/// Addresses that asked never to be sent a note again, kept as the same keyed hash.
+model Block {
+  hash      String   @id
+  createdAt DateTime @default(now())
+}
+
+/// Spoken lines, kept so the same words in the same voice are only paid for once.
+model VoiceClip {
+  /// sha256 of the voice and the text
+  key       String   @id
+  voice     String
+  text      String
+  audio     Bytes
+  mime      String   @default("audio/mpeg")
+  hits      Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
+/// Peruzzi's own recordings of the fixed lines ("Make some noise!", "I knew it."), uploaded in the admin.
+model VoiceLine {
+  key       String   @id
+  audio     Bytes
+  mime      String
+  updatedAt DateTime @updatedAt
+}
+
+/// The crowd's voices (an "ooh", a cheer, an "awww"…): made with ElevenLabs the first time a phone needs one, or
+/// uploaded in the admin.
+model Sound {
+  key       String   @id
+  audio     Bytes
+  mime      String   @default("audio/mpeg")
+  /// "made" with ElevenLabs, or "upload"
+  source    String
+  updatedAt DateTime @updatedAt
+}
+
+/// What the AI did that no note carries, with the tokens it took, for the admin's Costs page: a reading drafted while
+/// someone was still typing that they changed before asking. Each note's own reading is kept on the note.
+model AiUse {
+  id         String   @id @default(cuid())
+  at         DateTime @default(now())
+  /// "draft"
+  kind       String
+  model      String
+  tokensIn   Int      @default(0)
+  tokensOut  Int      @default(0)
+  cacheRead  Int      @default(0)
+  cacheWrite Int      @default(0)
+
+  @@index([at])
+}

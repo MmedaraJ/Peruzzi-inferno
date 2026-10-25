@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
+    <meta name="theme-color" content="#0e0d0b" />
+    <title>Peruzzi Asked · Could this be love?</title>
+    <meta name="description" content="Write someone a note. Peruzzi asks them for you: could this be love? A fan experience for Inferno by Peruzzi." />
+    <meta property="og:title" content="Peruzzi Asked" />
+    <meta property="og:description" content="Who’s on your mind? Write them a note. Peruzzi asks them for you: could this be love?" />
+    <meta property="og:image" content="/media/img/og.jpg" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/media/img/icon-180.png" />
+    <script>
+      // the stage opens on Peruzzi under the light: ask for him now, alongside the page's code, not after it
+      if (!/^\/(admin|question|tracks)\b/.test(location.pathname)) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = '/media/img/stage-1200.webp'; l.setAttribute('imagesrcset', '/media/img/stage-600.webp 600w, /media/img/stage-1200.webp 1200w'); l.setAttribute('imagesizes', '(max-width: 520px) 100vw, 520px'); l.setAttribute('fetchpriority', 'high'); document.head.appendChild(l); }
+    </script>
+  </head>
+  <body class="grain">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
