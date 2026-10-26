@@ -77,9 +77,9 @@ model Note {
   status     String    @default("asked")
   /// love (something sweet) | not_love (something they shouldn't have) | nonsense
   kind       String?
-  /// what they did, as Peruzzi tells it to them: "You guarded the last puff-puff for me like it was your WAEC result."
+  /// what they did, as Peruzzi tells it to them: "You queued two hours at the ATM with me, then it swallowed my card."
   line       String?
-  /// Peruzzi's answer to his own question: the kind of love it is, in two words at most ("Puff-Puff Love")
+  /// Peruzzi's answer to his own question: a sly name for what it really is, in three words at most ("Joint Account")
   verdict    String?
   /// when the person asked first opened it
   seenAt     DateTime?

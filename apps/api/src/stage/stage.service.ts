@@ -77,6 +77,8 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   /** each notebook's last draft (its words), and words that came too soon after it, waiting for the gap */
   private lastWords = new Map<string, string>();
   private waiting = new Map<string, NodeJS.Timeout>();
+  /** Peruzzi's last few answers, which go with the next notes so each gets its own */
+  private lately: string[] = [];
   /** the paid calls to the AI in the last hour, readings and drafts, each held to its own hourly ceiling */
   private calls = { note: new LastHour(), draft: new LastHour() };
   private ceilingSaid = { note: 0, draft: 0 }; private connWarned = 0;
@@ -196,7 +198,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
   private async readFor(c: StageConfig, d: NotebookRow, w: Words) {
     const first = !(await this.prisma.note.count({ where: { notebookId: d.id } }));
     const site = await this.cfg.site();
-    return read({ who: w.who.text, what: w.what.text, humour: c.humour, artist: site.artist, song: site.song, writer: d.name, back: first ? await this.backInfo(d.backOf) : null });
+    return read({ who: w.who.text, what: w.what.text, humour: c.humour, artist: site.artist, song: site.song, writer: d.name, back: first ? await this.backInfo(d.backOf) : null, lately: [...this.lately] });
   }
   /** A reading the stage paid for and didn't use, for the Costs page. */
   private unused(r: ReadingResult | null) {
@@ -281,6 +283,7 @@ export class StageService implements OnModuleInit, OnModuleDestroy {
           ...(serious ? {} : { kind: v.kind, line: v.line, verdict: v.verdict || null, askedAt: new Date() }),
         },
       });
+      if (!serious && v.verdict) this.lately = [...this.lately.filter((t) => t !== v.verdict), v.verdict].slice(-6);
       this.events.add('note_written', d.device, { back: !!d.backOf, drafted });
       if (serious) this.events.add('serious', d.device, {});
       else this.events.add('note_asked', d.device, { kind: v.kind, thing: v.thing, fallback: !ai, drafted, ms: ai?.ms || 0 });

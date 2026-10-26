@@ -29,11 +29,11 @@ export function OgLab() {
 }
 
 const SAMPLE: NoteCardData = {
-  noteNo: '0042', title: 'Blue Ticks', dear: 'Tobi', line: 'You left me on read for three days, then liked my story like nothing happened.', verdict: 'Blue-Tick Love',
+  noteNo: '0042', title: 'Blue Ticks', dear: 'Tobi', line: 'You left me on read for three days, then liked my story at 2am.', verdict: 'Selective Network',
   site: 'peruzziasks.com', song: 'Inferno', artist: 'Peruzzi', nameplate: 'Peruzzi',
 };
-const LONG: NoteCardData = { ...SAMPLE, noteNo: '0043', title: 'The Generator Did It', dear: 'Chidi', line: 'You ate my jollof, then blamed the generator like it has a mouth.', verdict: 'Generator Love' };
-const NOT: NoteCardData = { ...SAMPLE, noteNo: '0044', title: 'Low Data', dear: 'Emeka', line: 'You only remember my number when your data finishes, like I’m customer care.', verdict: 'Customer Care' };
+const LONG: NoteCardData = { ...SAMPLE, noteNo: '0043', title: 'Since 2023', dear: 'Chidi', line: 'You borrowed my charger in 2023, and it now answers to your surname.', verdict: 'Long-Term Hostage Situation' };
+const NOT: NoteCardData = { ...SAMPLE, noteNo: '0044', title: 'Low Data', dear: 'Emeka', line: 'You only call when your data finishes, then hang up once it’s back.', verdict: 'Free Hotspot' };
 
 /** Every card, drawn: a note, story and square, and a tracklist. */
 export function CardLab() {

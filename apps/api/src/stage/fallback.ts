@@ -6,9 +6,9 @@ import { asLine } from './peruzzi';
 const pick = <T>(a: T[], seed: number) => a[Math.abs(seed) % a.length];
 
 const TITLES = ['Little Things', 'Bonus Track', 'No Accident', 'Front Row', 'Encore'];
-/** Peruzzi's answer, for any note at all: the kinds of love that fit whatever someone did; and for a thing */
-const VERDICTS = ['Situationship', 'Complicated Love', 'Pending Love', 'Almost Love', 'Love Loading', 'Certified Delulu'];
-const THING_VERDICTS = ['Soft Life', 'True Love', 'Comfort Love', 'Forever Love'];
+/** Peruzzi's answer, for any note at all: sly names that fit whatever someone did; and for a thing */
+const VERDICTS = ['Situationship', 'Certified Delulu', 'Under Review', 'Strong Maybe', 'Talking Stage', 'Early Symptoms'];
+const THING_VERDICTS = ['Soft Life', 'Ride or Die', 'Emotional Support', 'Healthy Codependency'];
 /** what can't read a note: someone writing to it posts it instead of sending it */
 const THINGS = /\b(bed|pillow|jollof|amala|suya|rice|food|bread|indomie|phone|charger|generator|wi-?fi|data|nepa|light|car|lagos|abuja|arsenal|chelsea|barca|madrid|dog|cat|bag|money|salary|weekend|sleep|music)\b/i;
 

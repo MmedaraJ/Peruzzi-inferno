@@ -13,6 +13,10 @@ const NOTES: [string, string][] = [
   ['Chidi', 'ate my jollof and blamed the generator'],
   ['my bed', 'hold me better than anyone ever has'],
   ['Ada', 'stayed on the phone with me till NEPA brought light'],
+  ['my ex', 'left with my food containers'],
+  ['my bestie', 'said you were five minutes away for two hours'],
+  ['Seyi', 'paid my danfo fare and acted like it was nothing'],
+  ['my phone', 'die at 15% every single time'],
   ['asdfg', 'jjjjj kkk'],
 ]
 

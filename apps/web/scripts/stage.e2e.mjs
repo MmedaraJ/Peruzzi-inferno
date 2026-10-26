@@ -119,7 +119,7 @@ try {
   check('…what they did is on it as Peruzzi tells it, to them (“You …”), and no stamp', await noteBox.getByText(/^You .{8,}/).count() === 1 && await noteBox.locator('[data-stamp]').count() === 0);
   check('…Peruzzi asks the question, with nothing to tick', await noteBox.getByText('Peruzzi asks: Could this be love?', { exact: true }).count() === 1 && await noteBox.getByText(/^(Yes|No)$/).count() === 0 && await noteBox.getByRole('checkbox').count() === 0);
   const answer = (await noteBox.getByText(/^Peruzzi answers: .+\.$/).allInnerTexts())[0] || '';
-  check('…and Peruzzi answers it himself: the kind of love it is, in two words at most', /^Peruzzi answers: \S+( \S+)?\.$/.test(answer) && !/^Peruzzi answers: (Love|Yes|No)\.$/.test(answer), answer);
+  check('…and Peruzzi answers it himself: a sly name for it, in three words at most, never "love"', /^Peruzzi answers: \S+( \S+){0,2}\.$/.test(answer) && !/\blove\b|^Peruzzi answers: (Yes|No|Maybe)\.$/i.test(answer), answer);
   check('…and the song is in its corner', await noteBox.getByText('Inferno by Peruzzi', { exact: true }).count() === 1);
   const top = await noteBox.evaluate((el) => el.scrollTop); const paperAt = await noteBox.locator('canvas[data-paper]').boundingBox().catch(() => null);
   check('the note lands at the top, its paper starting in view', top === 0 && !!paperAt && paperAt.y >= 0 && paperAt.y < p.viewportSize().height * 0.6, JSON.stringify({ top, paper: paperAt && Math.round(paperAt.y) }));

@@ -1,6 +1,6 @@
 # Peruzzi Asks
 
-A fan experience for **Inferno**, Peruzzi's new song, whose hook asks "could this be love?". A fan writes someone a note in one sentence: "Dear ___, you ___." Something sweet they did, or something they shouldn't have. A crush, a bestie, a mum, even their bed. Peruzzi reads it at the mic in front of his crowd, tells what they did back to them, funnier, asks "Could this be love?", and answers it himself in two words: the kind of love it is ("Generator Love."). The person it's for opens the note on their phone, on the stage with the song playing, and can write one back. Anyone can write their own.
+A fan experience for **Inferno**, Peruzzi's new song, whose hook asks "could this be love?". A fan writes someone a note in one sentence: "Dear ___, you ___." Something sweet they did, or something they shouldn't have. A crush, a bestie, a mum, even their bed. Peruzzi reads it at the mic in front of his crowd, tells what they did back to them as a joke, asks "Could this be love?", and answers it himself in three words at most, slyly ("Joint Account.", "Insurance Fraud."). The person it's for opens the note on their phone, on the stage with the song playing, and can write one back. Anyone can write their own.
 
 The song's snippet plays underneath the whole time.
 
@@ -49,9 +49,9 @@ Back from a note's page is your notes, and back from your notes is a new note.
 - **Peruzzi reads it.** "peruzzi is reading it", over three slips: the band (a guitar strumming), Peruzzi in the middle (the mic swaying), the crowd (clapping). Above them, typed out a line at a time, what the room is up to ("The crowd wants to know who your crush is…", "Checking it's love and not just December…"), for as long as the reading takes. Then the lights come up on each of them, Peruzzi's last ("Peruzzi has it."), the drummer's crash, and the note. Peruzzi starts reading once the writer stops typing for a moment, so by the time they hand it up it's there or nearly.
 - **The note on paper**, light matte blush, under "Note 0007 · Two Hours at the ATM", the cover pinned to its corner:
   - **"Dear Kemi,"** as its headline, in the paper's ink like the rest.
-  - **What she did**, as Peruzzi tells it, to her: "You stood in an ATM queue with me for two hours like it was our first date."
+  - **What they did**, as Peruzzi tells it, to them: "You queued two hours at the ATM with me, then it swallowed my card."
   - **Peruzzi asks: Could this be love?** in a box of its own, in flat rose. That's all it says.
-  - **Peruzzi answers**, under it, in two words at most: the kind of love it is, named from the story, funny ("Queue Love.", "Generator Love.", "Situationship.").
+  - **Peruzzi answers**, under it, in three words at most: a sly name for what it really is, never the word love ("Joint Account.", "Insurance Fraud.", "Situationship.").
   - **"Inferno by Peruzzi"** in its bottom right corner.
 
   No stamp, nothing to tick, and no question at the foot: Peruzzi's box asks it. It's the story card's own paper: the page draws it with the card's code at the phone's width, so what's on screen is exactly what gets posted. What it says is also there as text for screen readers.
@@ -115,7 +115,7 @@ npm run web                                   # http://localhost:5173 (proxies /
 
 **Character.**
 - Peruzzi at the mic at his own show: the smoothest man in the building and the writer's biggest supporter, their wingman with a microphone.
-- Whatever they did, sweet or annoying, he tells it back bigger and funnier: an ATM queue becomes a first date, a saved puff-puff a state secret, three days on read a national holiday. The laugh is in how it's told: one exaggerated detail, comparison or twist. Warm, cheeky, playful: wit, never mush (no "soulmate", no butterflies), with everyday Nigerian life where it makes the line land and at most a touch of Pidgin.
+- Whatever they did, sweet or annoying, he tells it back as a joke, and never the same way twice: bigger, what happened next, a short question, a dry tag, the one detail that gives it away, a turn, or official business (the police, the bank). Never a "like…" comparison, the laziest joke there is, and short: every word the joke doesn't need goes. Warm, cheeky, sly: wit, never mush (no "soulmate", no butterflies), with everyday Nigerian life where it makes the line land and at most a touch of Pidgin.
 - He talks to the person the note is for: it's "you", never "he" or "she" about anyone.
 - He may speak as himself at the mic, but says nothing about his own life, his relationships or his songs. The admin's humour setting comes with each note.
 
@@ -123,10 +123,10 @@ npm run web                                   # http://localhost:5173 (proxies /
 - the kind: something sweet (love), something they shouldn't have (teased playfully, about what they did and never who they are), nonsense when there's nothing to read, or serious (below). It sets how the crowd takes the note (an "aww", a laugh) and the admin's insights; it isn't on the note;
 - who it's to, as the note says it after "Dear" ("my crush" → "Crush"), and whether that's a thing that can never read it;
 - the note's title, like a track on an album ("Last Puff-Puff"), for your notes, the tracklist and the emails;
-- what they did, told back to them, funnier: one short sentence starting "You", 6 to 16 words, keeping the facts and the writer's side of it ("You saved me…"), so a stranger who reads only this line gets the story;
-- his answer to his own question: the kind of love this is, named from what they did, in two words at most, title case, the punchline under the question ("Puff-Puff Love", "Customer Care", "Situationship"). Something they shouldn't have done gets a teasing name, something sweet a warm one. The server holds it to two words; if one doesn't come back, or with a prepared reading, an answer that fits any note stands in ("Situationship", "Pending Love"; for a thing, "Soft Life").
+- what they did, told back to them as a joke: starting "You", 6 to 14 words, one sentence or a sentence and a short tag, keeping the facts and the writer's side of it ("You saved me…"), so a stranger who reads only this line gets the story;
+- his answer to his own question, the punchline of the note: a sly name for what it really is, in three words at most, title case, borrowed from anywhere in life (the bank, the courtroom, the hospital, the network, Lagos slang) rather than a description of what happened ("Joint Account", "Insurance Fraud", "Food Security"). Never the word "love", never a word from the note with a label stuck on ("Tupperware Love"). His last few answers go with each note, so the next one gets its own. The server holds it to three words and turns away any with "love" in it; then, or with a prepared reading, an answer that fits any note stands in ("Situationship", "Under Review", "Strong Maybe"; for a thing, "Soft Life", "Ride or Die").
 
-The server holds the line to it (one sentence, starting "You", never "I think you"), whatever comes back.
+The server holds the line to it (starting "You", never "I think you", a sentence and a short tag at most), whatever comes back.
 
 **Peruzzi never:** uses full names, surnames or handles; jokes about bodies, tribe, religion, politics, sexuality, money troubles and the like; turns sexual, whatever the note says (it has to be sweet enough to read out at a family show); swears, threatens or is cruel; encourages snooping, stalking, or chasing someone who has said no; quotes lyrics or invents facts about himself.
 
