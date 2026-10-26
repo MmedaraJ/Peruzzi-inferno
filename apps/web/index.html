@@ -17,7 +17,7 @@
       // the page's code, not after it
       (function (p) {
         var img = function (src, set, sizes) { var l = document.createElement('link'); l.rel = 'preload'; l.as = 'image'; l.href = src; l.setAttribute('imagesrcset', set); l.setAttribute('imagesizes', sizes); l.setAttribute('fetchpriority', 'high'); document.head.appendChild(l); };
-        if (p === '/') img('/media/img/cover-1200.jpg', '/media/img/cover-600.jpg 600w, /media/img/cover-1200.jpg 1200w', '(max-aspect-ratio: 1/1) 100vh, 100vw');
+        if (p === '/') img('/media/img/cover-1200.jpg', '/media/img/cover-600.jpg 600w, /media/img/cover-1200.jpg 1200w', '(max-width: 480px) 64vw, 300px');
         else if (!/^\/(admin|question|tracks)\b/.test(p)) img('/media/img/stage-1200.webp', '/media/img/stage-600.webp 600w, /media/img/stage-1200.webp 1200w', '(max-width: 520px) 100vw, 520px');
       })(location.pathname);
     </script>

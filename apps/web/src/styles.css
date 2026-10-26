@@ -58,6 +58,10 @@
 }
 .vinyl-sheen { background: conic-gradient(from 20deg, transparent 0deg, rgba(255, 255, 255, 0.13) 22deg, transparent 50deg, transparent 180deg, rgba(255, 255, 255, 0.09) 202deg, transparent 230deg); }
 
+/* The cover as a sleeve, on the way in: most of a phone's width, less on a short screen. */
+.sleeve { width: min(64vw, 28vh, 300px); }
+@media (max-height: 640px) { .sleeve { width: min(64vw, 24vh, 300px); } }
+
 /* The shared pages' entrances, in CSS (they don't load framer-motion): each part rises into place in turn. Also the dots
    of a wait. */
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } }

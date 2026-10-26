@@ -98,9 +98,9 @@ export default function Asked() {
   useEffect(() => { if (view && view !== 'landing' && !seenStage.current) { seenStage.current = true; track('stage_view', { view, back: !!backCode }); } }, [view, backCode]);
   // the note's fonts and cover, so the paper is drawn the moment it comes
   useEffect(() => { if (status === 'ready') return whenIdle(preloadNote); }, [status]);
-  // the song, on every screen past the way in, from the moment the stage opens (the way in starts it with its tap; a
-  // phone that wants a tap first gets the pill), and again with each new note (a note put down for help stops it)
-  useEffect(() => { if (status === 'ready' && view && view !== 'landing') sound.playOnStage(); }, [status, view, writing?.key]);
+  // the song, on every screen from the way in on (a phone that wants a tap first gets the pill, and any tap starts it,
+  // the way into the stage too), and again with each new note (a note put down for help stops it)
+  useEffect(() => { if (status === 'ready' && view) sound.playOnStage(); }, [status, view, writing?.key]);
 
   // a note belongs to its visit: once its screen is left, coming back to it (forward, a reload) starts a new one
   const lastView = useRef(view);

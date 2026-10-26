@@ -49,9 +49,9 @@ export function Label({ children, className = '' }: { children: ReactNode; class
 export function Footnote({ demo, credit, className = '' }: { demo?: string | null; credit?: boolean; className?: string }) {
   if (!demo && !credit) return null;
   return (
-    <footer className={`text-center text-[12px] leading-relaxed text-bone/45 ${className}`}>
+    <footer className={`text-center text-[12px] leading-relaxed text-bone/60 ${className}`}>
       {demo && <p>{demo}</p>}
-      {credit && <p className="mt-1">Made by <a className="text-bone/65 underline decoration-bone/25 underline-offset-[3px] hover:text-bone" href={`mailto:mmedarajosiah@gmail.com?subject=${encodeURIComponent('About Peruzzi Asks')}`}>Mmedara Josiah</a></p>}
+      {credit && <p className="mt-1">Made by <a className="text-bone/80 underline decoration-bone/30 underline-offset-[3px] hover:text-bone" href={`mailto:mmedarajosiah@gmail.com?subject=${encodeURIComponent('About Peruzzi Asks')}`}>Mmedara Josiah</a></p>}
     </footer>
   );
 }

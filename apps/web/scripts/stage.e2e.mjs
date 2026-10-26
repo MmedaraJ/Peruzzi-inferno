@@ -1,6 +1,6 @@
-// The stage on a phone, the writer's side: the way in (the cover under the lights, the song, and Peruzzi Asks, whose
-// tap starts the song), the song playing as the stage opens (or, opened straight, a pill asking for a tap on a phone
-// that wants one, back whenever the song stops), the rig's lights,
+// The stage on a phone, the writer's side: the way in (the cover under the lights, the song, and Peruzzi Asks), the
+// song from the moment it opens (on a phone that wants a tap first, a pill asks for one there, and the tap into the
+// stage is one; back whenever the song stops), playing on into the stage, the rig's lights,
 // the note in one sentence ("Dear ___, you ___.", what they did kept short by its count, the suggestions always
 // something they shouldn't have done, and nothing to tick), Peruzzi reading it while the lights come up on the band
 // and the crowd, the note with what they did as Peruzzi tells it, his question and his answer (no stamp), and its card; your notes
@@ -21,13 +21,13 @@ try {
   const listen = p.getByRole('link', { name: /Listen to Inferno/ });
   check('the site opens on the way in: the cover under the lights, the song, and Peruzzi Asks', await p.locator('img[src*="cover-1200"]').count() === 1 && await p.locator('canvas[data-lights]').count() === 1 && await listen.isVisible() && await way.isVisible());
   check('…the song’s card is the streaming link', (await listen.getAttribute('href')) === (await (await fetch(`${A}/api/site`)).json()).smartLink);
-  check('…and the song waits for the tap into the stage', !(await p.evaluate(() => window.__sound?.musicPlaying)) && !(await p.getByRole('button', { name: 'Tap to play the music' }).isVisible()));
+  check('…and the song starts as it opens, where the browser allows it', await p.waitForFunction(() => window.__sound?.musicPlaying, null, { timeout: 8000 }).then(() => true, () => false) && !(await p.getByRole('button', { name: 'Tap to play the music' }).isVisible()));
   await p.waitForTimeout(800); await p.screenshot({ path: `${SHOTS}/landing.png` });
   await way.click();
   const who = p.getByLabel('Who it’s for'); const what = p.getByLabel('What they did'); await who.waitFor({ timeout: 60000 });
   check('the tap opens the stage, on a note: no lobby, no walkthrough', new URL(p.url()).pathname === '/stage' && await p.getByRole('heading', { name: 'who’s on your mind?' }).isVisible() && (await p.getByRole('dialog').count()) === 0);
   check('the stage: Peruzzi under the light, with his nameplate', await p.locator('img[src*="stage-"]').count() === 1 && await p.getByText(/^Peruzzi · live$/i).first().isVisible());
-  check('the song is playing as the stage opens, started by that tap', await p.waitForFunction(() => window.__sound?.musicPlaying, null, { timeout: 8000 }).then(() => true, () => false)
+  check('the song plays on into the stage', await p.waitForFunction(() => window.__sound?.musicPlaying, null, { timeout: 8000 }).then(() => true, () => false)
     && !(await p.getByRole('button', { name: 'Tap to play the music' }).isVisible()));
   const lights = () => p.evaluate(() => { const c = document.querySelector('canvas[data-lights]'); const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let lit = 0, sum = 0; for (let i = 0; i < d.length; i += 4) { const v = ((d[i] + d[i + 1] + d[i + 2]) * d[i + 3]) / 255; sum += v; if (v > 240) lit++; } return { lit, sum: Math.round(sum), of: d.length / 4 }; });
   const l1 = await lights(); await p.waitForTimeout(700); const l2 = await lights();
@@ -213,8 +213,11 @@ try {
     const tapPill = t.getByRole('button', { name: 'Tap to play the music' });
     const playing = () => t.evaluate(() => window.__sound.musicPlaying);
     await t.goto(`${W}/`, { waitUntil: 'networkidle' });
-    await t.getByRole('button', { name: /who’s on your mind/i }).click(); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
-    check('on a phone that wants a tap first, the way in’s tap is it: the song plays as the stage opens, no pill', await t.waitForFunction(() => window.__sound.musicPlaying, null, { timeout: 6000 }).then(() => true, () => false) && !(await tapPill.isVisible()));
+    const way2 = t.getByRole('button', { name: /who’s on your mind/i }); await way2.waitFor({ timeout: 60000 });
+    check('on a phone that wants a tap first, the way in asks for one the moment it opens', await tapPill.waitFor({ timeout: 6000 }).then(() => true, () => false) && !(await playing()));
+    await t.screenshot({ path: `${SHOTS}/landing-tap-pill.png` });
+    await way2.click(); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
+    check('…and the tap into the stage is one: the song plays as the stage opens, the pill gone', await t.waitForFunction(() => window.__sound.musicPlaying, null, { timeout: 6000 }).then(() => true, () => false) && !(await tapPill.isVisible()));
     await t.goto(`${W}/stage`, { waitUntil: 'networkidle' }); await t.getByLabel('Who it’s for').waitFor({ timeout: 60000 });
     check('…opened straight on the stage, a pill asks for the tap the moment it opens', await tapPill.waitFor({ timeout: 6000 }).then(() => true, () => false) && !(await playing()));
     await t.screenshot({ path: `${SHOTS}/stage-tap-pill.png` });
